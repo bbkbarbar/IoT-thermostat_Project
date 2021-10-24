@@ -1,6 +1,8 @@
 
 #define USE_SECRET  1
 
+//#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+
 // 1 "TP-Link_BB"    
 // 2 "BB_Home2"  
 // 3 "P20 Pro"    
@@ -10,7 +12,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      23
+#define BUILDNUM                      24
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -379,19 +381,29 @@ void HandleMultipleData(){
 
 void showPureValues(){
   Serial.println("showPureValues() called...");
-  String message = "{\n\r";
+  float ts = ((float)tempSet) / 10;
+  float ohd = ((float)overheatingDifference) / 10;
+  String message = "{\n";
   
-  message += "\t\"IoT device id\": \"" + String(IOT_DEVICE_ID) + "\",\n\r";
-  message += "\t\"location\": \"" + String(LOCATION_NAME) + "\",\n\r";
-  message += "\t\"elapsedTime\": \"" + String(elapsedTime) + "\",\n\r";
-  message += "\t\"values\": {\n\r";
-  message += "\t\t\"tempC\": \"" + String(valC) + "\",\n\r";
-  message += "\t\t\"tempF\": \"" + String(valF) + "\",\n\r";
-  message += "\t\t\"humidity\": \"" + String(valH) + "\",\n\r";
-  message += "\t\t\"heatIndex\": \"" + String(valT) + "\"\n\r";
-  message += "\t},\n\r";
-  message += "\t\"phaseStatus\": \"" + getCurrentPhaseState() + "\"\n\r";
-  message += "}\n\r";
+  message += "\t\"IoT device id\": \"" + String(IOT_DEVICE_ID) + "\",\n";
+  message += "\t\"location\": \"" + String(LOCATION_NAME) + "\",\n";
+  message += "\t\"elapsedTime\": \"" + String(elapsedTime) + "\",\n";
+  message += "\t\"values\": {\n";
+  message += "\t\t\"tempC\": \"" + String(valC) + "\",\n";
+  message += "\t\t\"tempF\": \"" + String(valF) + "\",\n";
+  message += "\t\t\"humidity\": \"" + String(valH) + "\",\n";
+  message += "\t\t\"heatIndex\": \"" + String(valT) + "\"\n";
+  message += "\t},\n";
+  message += "\t\"parameters\": {\n";
+  message += "\t\t\"targetTemp\": \"" + String(ts) + "\",\n";
+  message += "\t\t\"overheatingDiff\": \"" + String(ohd) + "\"\n";
+  message += "\t},\n";
+  message += "\t\"phaseChecker\": {\n";
+  message += "\t\t\"phaseCheckerIP\": \"" + String(PHASE_CHECKER_IP) + "\",\n";
+  message += "\t\t\"phaseStatus\": \"" + getCurrentPhaseState() + "\"\n";
+  message += "\t},\n";
+  message += "\t\"heating\": \"" + String(action) + "\"\n";
+  message += "}\n";
   server.send(200, "text/json", message );
 }
 
@@ -493,7 +505,7 @@ void setup() {
 
   turnLED(OFF);
 
-  Serial.println("PhaseStatus\tStatus\tHumidity (%)\tTemperature (C)\tTempSet\t(F)\tHeatIndex (C)\t(F)");
+  Serial.println("PhaseStatus\tStatus\tHumidity (%)\tTemperature (C)\tTempSet\tOverheating (.C)\t(F)\tHeatIndex (C)\t(F)");
   lastTemp = -100000;
 
   delay(10000);
@@ -543,7 +555,7 @@ short decide(){
     compareValue += overheatingDifference; // TODO
   }
   
-  if( ((int)(valC*10)) < compareValue ){
+  if( (valC != NAN) && (((int)(valC*10)) < compareValue ) ){
     action = HEATING;
   }else{
     action = NOTHING;
@@ -577,7 +589,7 @@ void sensorLoop(long now){
     valT = dht.computeHeatIndex(temperature, humidity, false);
    
     Serial.print("\t" + lastPhaseStatus);
-    Serial.print("\t\t");
+    Serial.print("\t");
     Serial.print(dht.getStatusString());
     Serial.print("\t");
     Serial.print(humidity, 1);
@@ -586,6 +598,7 @@ void sensorLoop(long now){
     Serial.print(" C\t\t");
     Serial.print(ts, 1);
     Serial.print(" C\t");
+    Serial.print("\t." + String(overheatingDifference) + " C\t\t");
     Serial.print(valF, 1);
     Serial.print(" F\t\t");
     Serial.print(valT, 1);
@@ -633,7 +646,9 @@ void sensorLoop(long now){
     // "heating?" part
     line += action;
 
-    Serial.println("\"" + line + "\"");
+    #ifdef SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+      Serial.println("\"" + line + "\"");
+    #endif
     //serialOut.println("1|25.40|63.00|0");
     serialOut.println(line);
     
