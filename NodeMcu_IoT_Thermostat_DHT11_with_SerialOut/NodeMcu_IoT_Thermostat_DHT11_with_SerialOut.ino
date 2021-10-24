@@ -12,16 +12,12 @@
 #define VERSION                 "v2.5_sd"
 #define BUILDNUM                      23
 
-#define TEMPERATURE_CORRECTION   (-0.5f)
-
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
 
 // DHT-11 module powered by NodeMCU's 5V 
 // DHT-11 connected to D5 of NodeMCU
 // Pinout: https://circuits4you.com/2017/12/31/nodemcu-pinout/
-
-//#include "DHTesp.h"
 
 #include <SoftwareSerial.h>
 #include <DHTesp.h>
@@ -37,10 +33,6 @@
 #include "params.h"
 #include <EEPROM.h>
 
-
-#define ON                         1
-#define OFF                        0
- 
 DHTesp dht;
 
 //==================================
@@ -603,13 +595,6 @@ void sensorLoop(long now){
     #ifndef SKIP_TS_COMMUNICATION
     String st = dht.getStatusString();
     if(st.length() < 4){
-      /*
-      if( sendValuesToTSServer(heatindex, humidity, temperature) ){
-        // Reset errorCount because we had a normal value reading and a normal online communication after that..
-        errorCount = 0;
-      }
-      /**/
-      
       sendValuesToTSServer(valT, humidity, temperature);
     }else{
       //Show temp and/or humidity reading error..
