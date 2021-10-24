@@ -12,7 +12,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      24
+#define BUILDNUM                      25
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -386,6 +386,7 @@ void showPureValues(){
   String message = "{\n";
   
   message += "\t\"IoT device id\": \"" + String(IOT_DEVICE_ID) + "\",\n";
+  message += "\t\"BuildNum\": \"" + String(BUILDNUM) + "\",\n";
   message += "\t\"location\": \"" + String(LOCATION_NAME) + "\",\n";
   message += "\t\"elapsedTime\": \"" + String(elapsedTime) + "\",\n";
   message += "\t\"values\": {\n";
@@ -436,11 +437,11 @@ int initWiFi(){
   
   if(connectToWiFi(ssid, password)){
     Serial.println("");
-    Serial.print("Connected. IP address: ");
-    Serial.println(WiFi.localIP());
+    Serial.println("Connected");
     String ipMessage = "I" + WiFi.localIP().toString();
     serialOut.println(ipMessage);
-    Serial.println("SENT: " + ipMessage );
+    //Serial.println("SENT: " + ipMessage );
+    
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
@@ -602,7 +603,7 @@ void sensorLoop(long now){
     Serial.print(valF, 1);
     Serial.print(" F\t\t");
     Serial.print(valT, 1);
-    Serial.print("\t\t");
+    Serial.print("\t");
     Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
 
     #ifndef SKIP_TS_COMMUNICATION
