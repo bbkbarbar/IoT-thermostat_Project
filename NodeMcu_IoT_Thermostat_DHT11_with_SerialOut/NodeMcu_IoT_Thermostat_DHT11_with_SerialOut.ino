@@ -12,7 +12,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      25
+#define BUILDNUM                      26
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -599,9 +599,9 @@ void sensorLoop(long now){
     Serial.print(" C\t\t");
     Serial.print(ts, 1);
     Serial.print(" C\t");
-    Serial.print("\t." + String(overheatingDifference) + " C\t\t");
+    Serial.print("\t." + String(overheatingDifference) + " C\t");
     Serial.print(valF, 1);
-    Serial.print(" F\t\t");
+    Serial.print(" F\t");
     Serial.print(valT, 1);
     Serial.print("\t");
     Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
