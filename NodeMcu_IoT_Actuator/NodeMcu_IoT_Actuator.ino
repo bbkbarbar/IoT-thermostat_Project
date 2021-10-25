@@ -26,6 +26,9 @@
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
 
+#include "secrets.h"
+#include "params.h"
+
 
 //==================================
 // WIFI
@@ -170,7 +173,7 @@ String generateHtmlHeader(){
   h += "<html lang=\"en\">";
   h += "\n\t<head>";
   h += "\n\t\t<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">";
-  h += "\n\t\t<title>" + String(TITLE) + " " + String(VERSION) + "</title>"
+  h += "\n\t\t<title>" + String(TITLE) + " " + String(VERSION) + "</title>";
   h += "\n\t</head>";
   return h;
 }
@@ -231,7 +234,7 @@ String getNeededAction(){
 
 void HandleData(){
   //Serial.println("HandleData called...");
-  String message = "" +  "TODO here";
+  String message = "TODO here";
   server.send(200, "text/html", message );
 }
 
@@ -267,7 +270,6 @@ int initWiFi(){
     Serial.println("");
     Serial.println("Connected");
     String ipMessage = "I" + WiFi.localIP().toString();
-    serialOut.println(ipMessage);
     //Serial.println("SENT: " + ipMessage );
     
     // for reconnecting feature
@@ -305,7 +307,7 @@ void setup() {
   // EEPROM
   EEPROM.begin(128);
   // EEPROM read methods can not be used before the first write method..
-  tempSet = loadFromEEPROM(eepromAddr);
+  //tempSet = loadFromEEPROM(eepromAddr);
 
   initWiFi();
 
