@@ -14,8 +14,9 @@
  
 #define DHT11_PIN                         14 // 14 means D5 in NodeMCU board -> Pin for temperature and humidity sensor
 
-#define SOFT_SERIAL_RX                     5 //  5 means D1 in NodeMCU board
-#define SOFT_SERIAL_TX                     4 //  4 means D2 in NodeMCU board
+#define RELAY_PIN                         2  // 2 means D4 in Wemos D1 Mini board
+                                             // 5 means D1 in NodeMCU board
+                                             // 17 means D4 in NodeMCU board
 
 
 // =============================
@@ -30,7 +31,7 @@
 #define WIFI_WAIT_IN_MS                 1000
 
 // delay for normal working
-#define DELAY_BETWEEN_ITERATIONS_IN_MS 30000
+#define DELAY_BETWEEN_ITERATIONS_IN_MS 10000
 
 #define DELAY_BETWEEN_WIFI_CONNECTION_STATUS_CHECKS_IN_MS 20000
 

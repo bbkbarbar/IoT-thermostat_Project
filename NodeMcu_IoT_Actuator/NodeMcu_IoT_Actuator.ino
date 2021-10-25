@@ -1,6 +1,9 @@
 
 #define USE_SECRET  1
 
+// Used board setting:
+// WeMos D1 R1
+
 //#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
 
 // 1 "TP-Link_BB"    
@@ -12,7 +15,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v0.1"
-#define BUILDNUM                       1
+#define BUILDNUM                       2
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -133,6 +136,13 @@ short loadFromEEPROM(int addr){
 }
 
 void turnHeating(short state){
+
+   if(state == ON){
+    digitalWrite(RELAY_PIN, LOW);   // due to using low level trigger-ed relay module
+  }else{
+    digitalWrite(RELAY_PIN, HIGH);  
+  }
+  
   //TODO HERE
 }
 
@@ -214,13 +224,15 @@ String getNeededAction(){
     // old
     //http.begin("192.168.1.170:81/data");  //Specify request destination
     // new
-    String thermostatServerPath = "http://" + String(THERMOSTAT_IP) + ":80/result";
+    
+    //String thermostatServerPath = "http://" + String(THERMOSTAT_IP) + "/result";
+    String thermostatServerPath = "http://192.168.1.107/result";
     http.begin(client, thermostatServerPath.c_str());  //Specify request destination
 
     int httpCode = http.GET();                                  //Send the request
     
     String payload = "";
-    if (httpCode > 0) { //Check the returning code
+    if (httpCode != 0) { //Check the returning code
       payload = http.getString();   //Get the request response payload
     }else{
       payload = String(NEEDED_ACTION_UNKNOWN);
@@ -229,6 +241,8 @@ String getNeededAction(){
     //Serial.println("");
  
     http.end();   //Close connection
+    Serial.println("Wanted action: " + payload);
+
     return payload;
 }
 
@@ -291,6 +305,8 @@ int initWiFi(){
 void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
+  pinMode(RELAY_PIN, OUTPUT);
+  turnHeating(OFF);
 
   elapsedTime = millis();
   
@@ -372,8 +388,10 @@ void doOurTask(long now){
 
     if(res == NEEDED_ACTION_HEATING){
       turnHeating(ON);
+      action = 1;
     }else{
       turnHeating(OFF);
+      action = 0;
     }
 
     if(errorCount >= ERROR_COUNT_BEFORE_RESTART){
