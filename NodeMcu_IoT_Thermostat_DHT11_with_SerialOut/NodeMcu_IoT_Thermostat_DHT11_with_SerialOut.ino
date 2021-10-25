@@ -12,7 +12,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      26
+#define BUILDNUM                      27
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -68,8 +68,8 @@ SoftwareSerial serialOut(SOFT_SERIAL_RX, SOFT_SERIAL_TX);      // (Rx, Tx)
 //==================================
 // EEPROM
 //==================================
-int eepromAddr =                   0;
-int eepromAddr2 =                 10;
+int eepromAddr =                   1;
+int eepromAddr2 =                  4;
 
 
 //==================================
@@ -80,9 +80,9 @@ float valF = NAN;
 float valH = NAN;
 float valT = NAN;
 
-int tempSet = 150; // means 15,0 °C
+short tempSet = 150; // means 15,0 °C
+short overheatingDifference = 0;
 
-int overheatingDifference = 0;
 short action = NOTHING; // can be NOTHING or HEATING
 
 int lastTSUpdateStatus = -1;
@@ -197,6 +197,30 @@ void doRestart(){
 }
 
 
+void saveToEEPROM(int addr, short value){
+
+  byte b1 = value & 0b11111111;
+  byte b2 = (value>>8) & 0b11111111;
+
+  Serial.println("Value: " + String(value));
+  Serial.println("b1: " + String(b1));
+  Serial.println("b2: " + String(b2));
+  
+  EEPROM.write(addr, b1);
+  EEPROM.write(addr+1, b2);
+  EEPROM.commit();
+}
+
+short loadFromEEPROM(int addr){
+  byte b1 = EEPROM.read(addr);
+  byte b2 = EEPROM.read(addr+1);
+
+  short value = 0;
+  value |= (b2<<8);
+  value |= b1;
+  return value;
+}
+
 // ==========================================================================================================================
 //                                                  Web server functions
 // ==========================================================================================================================
@@ -216,30 +240,29 @@ void HandleNotFound(){
   server.send(404, "text/html", message);
 }
 
-String actionTempSet(){
+void actionTempSet(){
   String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
   tempSet = value.toInt();
 
   // save into eeprom
-  EEPROM.write(eepromAddr, tempSet);
-  EEPROM.commit();
-  
+  saveToEEPROM(eepromAddr, tempSet);
+  float ts = (float)tempSet/10;
   Serial.println("Try to SET: " + String(tempSet) );
-  String m = String("Target temperature value set: ") + String(tempSet);
-  return m;
+  String m = String("Target temperature value set:\n") + String(ts) + "C";
+  server.send(200, "text/html", m );
 }
 
-String actionOverheatSet(){
+void actionOverheatSet(){
   String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
   overheatingDifference = value.toInt();
 
   // save into eeprom
-  EEPROM.write(eepromAddr2, overheatingDifference);
-  EEPROM.commit();
-  
+  saveToEEPROM(eepromAddr2, overheatingDifference);
+
+  float oh = (float)overheatingDifference/10;
   Serial.println("Try to set overheating: " + String(overheatingDifference) );
-  String m = String("Overheating value set: ") + String(overheatingDifference);
-  return m;
+  String m = String("Overheating value set: ") + String(oh)  + "C";
+  server.send(200, "text/html", m );
 }
 
 void HandleNotRstEndpoint(){
@@ -480,9 +503,9 @@ void setup() {
   // EEPROM
   EEPROM.begin(128);
   // EEPROM read methods can not be used before the first write method..
-  tempSet = EEPROM.read(eepromAddr);
+  tempSet = loadFromEEPROM(eepromAddr);
   Serial.println("Set temperature: " + String(tempSet));
-  overheatingDifference = EEPROM.read(eepromAddr2);
+  overheatingDifference = loadFromEEPROM(eepromAddr2);
   Serial.println("Overheating difference: " + String(overheatingDifference));
 
   
@@ -504,6 +527,9 @@ void setup() {
   server.begin();
   Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + String("@ port: ") + String(SERVER_PORT) );
 
+  Serial.println("short: " + String(sizeof(short)));
+  Serial.println("int: " + String(sizeof(int)));
+  
   turnLED(OFF);
 
   Serial.println("PhaseStatus\tStatus\tHumidity (%)\tTemperature (C)\tTempSet\tOverheating (.C)\t(F)\tHeatIndex (C)\t(F)");
@@ -582,6 +608,7 @@ void sensorLoop(long now){
     float humidity = dht.getHumidity();
     float temperature = dht.getTemperature();
     float ts = ((float)tempSet) / 10;
+    float oh = (float)overheatingDifference/10;
     turnLED(OFF);
 
     valC = temperature + TEMPERATURE_CORRECTION;
@@ -599,7 +626,7 @@ void sensorLoop(long now){
     Serial.print(" C\t\t");
     Serial.print(ts, 1);
     Serial.print(" C\t");
-    Serial.print("\t." + String(overheatingDifference) + " C\t");
+    Serial.print("\t" + String(oh) + " C\t");
     Serial.print(valF, 1);
     Serial.print(" F\t");
     Serial.print(valT, 1);
