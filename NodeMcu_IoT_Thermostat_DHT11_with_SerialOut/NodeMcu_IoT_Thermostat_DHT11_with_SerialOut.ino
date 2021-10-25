@@ -1,6 +1,11 @@
 
 #define USE_SECRET  1
 
+/*
+ * Used board setting:
+ * NodeMCU 1.0 (ESP-12E Module)
+ */ 
+
 //#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
 
 // 1 "TP-Link_BB"    
@@ -12,7 +17,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      29
+#define BUILDNUM                      30
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -249,6 +254,9 @@ void actionTempSet(){
   float ts = (float)tempSet/10;
   Serial.println("Try to SET: " + String(tempSet) );
   String m = String("Target temperature value set:\n") + String(ts) + "C";
+
+  //To force quick reaction of set comand
+  lastTemp = lastTemp - DELAY_BETWEEN_ITERATIONS_IN_MS;
   server.send(200, "text/html", m );
 }
 
@@ -262,6 +270,9 @@ void actionOverheatSet(){
   float oh = (float)overheatingDifference/10;
   Serial.println("Try to set overheating: " + String(overheatingDifference) );
   String m = String("Overheating value set: ") + String(oh)  + "C";
+
+  //To force quick reaction of set comand
+  lastTemp = lastTemp - DELAY_BETWEEN_ITERATIONS_IN_MS;
   server.send(200, "text/html", m );
 }
 
