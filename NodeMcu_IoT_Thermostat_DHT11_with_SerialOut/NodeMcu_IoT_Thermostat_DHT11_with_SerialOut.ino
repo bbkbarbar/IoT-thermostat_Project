@@ -12,7 +12,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      27
+#define BUILDNUM                      28
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -388,6 +388,11 @@ String getCurrentPhaseState(){
     return payload;
 }
 
+void GetNeededAction(){
+  String message = "" + String(action);
+  server.send(200, "text/html", message );
+}
+
 void HandleData(){
   //Serial.println("HandleData called...");
   String message = "" +  String(valC) + " " +  String(valH);
@@ -516,6 +521,7 @@ void setup() {
 
 
   server.on("/", HandleRoot);
+  server.on("/result", GetNeededAction);
   server.on("/data", HandleData);
   server.on("/data2", HandleMultipleData);
   //server.on ("/save", handleSave);
