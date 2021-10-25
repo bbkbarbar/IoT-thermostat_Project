@@ -1,4 +1,4 @@
-# NodeMcu IoT Thermostat DHT11 with SerialOut
+# IoT Thermostat v2.5
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
