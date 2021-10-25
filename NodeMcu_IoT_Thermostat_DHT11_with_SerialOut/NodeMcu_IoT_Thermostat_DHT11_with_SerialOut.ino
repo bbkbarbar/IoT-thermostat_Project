@@ -12,7 +12,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                 "v2.5_sd"
-#define BUILDNUM                      28
+#define BUILDNUM                      29
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -388,6 +388,24 @@ String getCurrentPhaseState(){
     return payload;
 }
 
+void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh , String heating){
+     //Declare an object of class HTTPClient
+
+    String getData = "?ps=" + lastPhaseStatus + "&temp=" + temperature + "&tempSet=" + ts + "&overheat=" + oh + "&heating=" + heating;
+    
+    // new
+    String logServerPath = "http://192.168.1.141:8083/datalogger2" + getData;
+    http.begin(client, logServerPath.c_str());  //Specify request destination
+
+    http.addHeader("Content-Type", "text/plain");
+    int httpCode = http.GET();                                  //Send the request
+
+    Serial.println("Logs sent: " + getData);
+
+    //Close connection
+    http.end();   //Close connection
+}
+
 void GetNeededAction(){
   String message = "" + String(action);
   server.send(200, "text/html", message );
@@ -638,6 +656,8 @@ void sensorLoop(long now){
     Serial.print(valT, 1);
     Serial.print("\t");
     Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
+
+    //sendLogs(lastPhaseStatus, String(temperature), String(ts), String(oh), String(action) );
 
     #ifndef SKIP_TS_COMMUNICATION
     String st = dht.getStatusString();
