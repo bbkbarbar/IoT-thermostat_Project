@@ -5,7 +5,11 @@
 Required libraries:
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
+Endpoints:
+ - /result => for checking wanted status by actuator
+
 TODO list:
+ - Data logging on local mock server should works fine
  - tempSet can not be restored properly from EEPROM if it's last value > 255
    (overflow occures)
    Tried to store in 2 places and concatenate.. now working yet.
