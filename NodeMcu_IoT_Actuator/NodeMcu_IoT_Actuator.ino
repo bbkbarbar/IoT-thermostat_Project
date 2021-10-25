@@ -1,0 +1,390 @@
+
+#define USE_SECRET  1
+
+//#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+
+// 1 "TP-Link_BB"    
+// 2 "BB_Home2"  
+// 3 "P20 Pro"    
+// 4 "BB_guest"
+
+//#define USE_TEST_CHANNEL
+#define SKIP_TS_COMMUNICATION
+
+#define VERSION                   "v0.1"
+#define BUILDNUM                       1
+
+#define SERIAL_BOUND_RATE         115200
+#define SOFT_SERIAL_BOUND_RATE      9600
+
+// Pinout: https://circuits4you.com/2017/12/31/nodemcu-pinout/
+
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <WiFiClient.h>
+#include <ESP8266HTTPClient.h>
+#include <EEPROM.h>
+
+
+//==================================
+// WIFI
+//==================================
+const char* ssid =           S_SSID;
+const char* password =       S_PASS;
+
+
+
+// =================================
+// HTTP
+// =================================
+ESP8266WebServer server(SERVER_PORT);
+HTTPClient http;
+
+
+//==================================
+// ThingSpeak
+//==================================
+WiFiClient client;
+
+//==================================
+// EEPROM
+//==================================
+int eepromAddr =                   1;
+int eepromAddr2 =                  4;
+
+
+//==================================
+// "Data" variables
+//==================================
+
+short action = NOTHING; // can be NOTHING or HEATING
+
+//==================================
+// Other variables
+//==================================
+long lastWiFiCheck = 0;
+long lastCheck = 0;
+int errorCount = 0;
+
+unsigned long elapsedTime = 0;
+
+
+// ==========================================================================================================================
+//                                                 Hw feedback function
+// ==========================================================================================================================
+
+void turnLED(int state){
+  if(state > 0){
+    digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    // but actually the LED is on; this is because
+    // it is active low on the ESP-01)
+  }else{
+    digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
+  }
+}
+
+void ledBlink(int blinkCount, int onTime, int offTime){
+  for(short int i=0; i<blinkCount; i++){
+    turnLED(ON);
+    delay(onTime);                      // Wait for a second
+    turnLED(OFF);
+    if(i < blinkCount-1){
+      delay(offTime);
+    }
+  }
+}
+
+// ==========================================================================================================================
+//                                                     Other methods
+// ==========================================================================================================================
+
+void doRestart(){
+  Serial.println("Restart now...");
+  ESP.restart();
+}
+
+
+void saveToEEPROM(int addr, short value){
+
+  byte b1 = value & 0b11111111;
+  byte b2 = (value>>8) & 0b11111111;
+
+  Serial.println("Value: " + String(value));
+  Serial.println("b1: " + String(b1));
+  Serial.println("b2: " + String(b2));
+  
+  EEPROM.write(addr, b1);
+  EEPROM.write(addr+1, b2);
+  EEPROM.commit();
+}
+
+short loadFromEEPROM(int addr){
+  byte b1 = EEPROM.read(addr);
+  byte b2 = EEPROM.read(addr+1);
+
+  short value = 0;
+  value |= (b2<<8);
+  value |= b1;
+  return value;
+}
+
+void turnHeating(short state){
+  //TODO HERE
+}
+
+// ==========================================================================================================================
+//                                                  Web server functions
+// ==========================================================================================================================
+
+void HandleNotFound(){
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET)?"GET":"POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i=0; i<server.args(); i++){
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/html", message);
+}
+
+void actionTempSet(){
+  String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
+  int v = value.toInt();
+
+  String m = String("Value received:\n") + String(v);
+  server.send(200, "text/html", m );
+}
+
+
+void HandleNotRstEndpoint(){
+  doRestart();
+}
+
+String generateHtmlHeader(){
+  String h = "<!DOCTYPE html>";
+  h += "<html lang=\"en\">";
+  h += "\n\t<head>";
+  h += "\n\t\t<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">";
+  h += "\n\t\t<title>" + String(TITLE) + " " + String(VERSION) + "</title>"
+  h += "\n\t</head>";
+  return h;
+}
+
+String generateHtmlBody(){
+  String m = "\t<body bgcolor=\"#49B7E8\">";
+
+  m += "\t\t<h4>";
+  m += String(SOFTWARE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM);
+  m += "<br>" + String(LOCATION_NAME);
+  m += "</h4><br>";
+  m += "\n\t<center>\n";
+
+  // FŰTÉS visszajelzése
+  if(action == HEATING){
+    m += "\t\t<h1>F&Udblac;T&Edot;S</h1>";
+  }else{
+    m += "\t\t<br>";
+  }
+  
+
+  m += "\n\t</center>";
+  m += "\n<br>ErrorCount: " + String(errorCount);
+  m += "\n<br>Elasped time: " + String(elapsedTime);
+  m += "\t</body>\r\n";
+  m += "</html>";
+  
+  return m;
+}
+
+void HandleRoot(){
+  String message = generateHtmlHeader();
+  message += generateHtmlBody();
+  server.send(200, "text/html", message );
+}
+
+String getNeededAction(){
+    // old
+    //http.begin("192.168.1.170:81/data");  //Specify request destination
+    // new
+    String thermostatServerPath = "http://" + String(THERMOSTAT_IP) + ":80/result";
+    http.begin(client, thermostatServerPath.c_str());  //Specify request destination
+
+    int httpCode = http.GET();                                  //Send the request
+    
+    String payload = "";
+    if (httpCode > 0) { //Check the returning code
+      payload = http.getString();   //Get the request response payload
+    }else{
+      payload = String(NEEDED_ACTION_UNKNOWN);
+      Serial.println("httpCode: " + String(httpCode));
+    }
+    //Serial.println("");
+ 
+    http.end();   //Close connection
+    return payload;
+}
+
+void HandleData(){
+  //Serial.println("HandleData called...");
+  String message = "" +  "TODO here";
+  server.send(200, "text/html", message );
+}
+
+
+
+// ==========================================================================================================================
+//                                                        WiFi handling
+// ==========================================================================================================================
+
+int connectToWiFi(String ssid, String pw){
+  // Setup WIFI
+  WiFi.begin(ssid, password);
+  Serial.println("Try to connect (SSID: " + String(ssid) + ")");
+  
+  // Wait for WIFI connection
+  int tryCount = 0;
+  while ( (WiFi.status() != WL_CONNECTED) && (tryCount < WIFI_TRY_COUNT)) {
+    delay(WIFI_WAIT_IN_MS);
+    tryCount++;
+    Serial.print(".");
+  }
+
+  if(WiFi.status() == WL_CONNECTED){
+    return 1;
+  }else{
+    return 0;
+  }
+}
+
+int initWiFi(){
+  
+  if(connectToWiFi(ssid, password)){
+    Serial.println("");
+    Serial.println("Connected");
+    String ipMessage = "I" + WiFi.localIP().toString();
+    serialOut.println(ipMessage);
+    //Serial.println("SENT: " + ipMessage );
+    
+    // for reconnecting feature
+    WiFi.setAutoReconnect(true);
+    WiFi.persistent(true);
+  }else{
+    Serial.println("");
+    Serial.print("ERROR: Unable to connect to ");
+    Serial.println(ssid);
+    doRestart();
+  }
+}
+
+
+// ==========================================================================================================================
+//                                                        Init
+// ==========================================================================================================================
+ 
+void setup() {
+
+  pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
+
+  elapsedTime = millis();
+  
+  turnLED(ON);
+
+  errorCount = 0;
+  
+  Serial.begin(SERIAL_BOUND_RATE);
+  Serial.println();
+  Serial.println("\n");
+  Serial.print(String(TITLE) + " ");
+  Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION));
+
+  // EEPROM
+  EEPROM.begin(128);
+  // EEPROM read methods can not be used before the first write method..
+  tempSet = loadFromEEPROM(eepromAddr);
+
+  initWiFi();
+
+
+  server.on("/", HandleRoot);
+  server.on("/data", HandleData);
+  //server.on ("/save", handleSave);
+  server.on("/rst", HandleNotRstEndpoint);
+  server.onNotFound( HandleNotFound );
+  server.begin();
+  Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + String("@ port: ") + String(SERVER_PORT) );
+
+  turnLED(OFF);
+
+  //TODO
+  delay(500);
+}
+
+
+// ==========================================================================================================================
+//                                                        Loop
+// ==========================================================================================================================
+
+void wifiConnectionCheck(long now){
+  //TODO: need to add optional macro for Serial prints of WiFi state
+  if( (now - lastWiFiCheck) >= DELAY_BETWEEN_WIFI_CONNECTION_STATUS_CHECKS_IN_MS ){
+    lastWiFiCheck = now;
+    
+    switch (WiFi.status()){
+      case WL_NO_SSID_AVAIL:
+        Serial.println("Configured SSID cannot be reached");
+        turnLED(ON);
+        break;
+      case WL_CONNECTED:
+        turnLED(OFF);
+        //Serial.println("Connection successfully established");
+        break;
+      case WL_CONNECT_FAILED:
+        turnLED(ON);
+        Serial.println("Connection failed");
+        //initWiFi();
+        break;
+    }
+    /*
+    Serial.printf("Connection status: %d\n", WiFi.status());
+    Serial.print("RRSI: ");
+    Serial.println(WiFi.RSSI());
+    /**/
+  }
+}
+
+
+void doOurTask(long now){
+  if( (now - lastCheck) > DELAY_BETWEEN_ITERATIONS_IN_MS ){ //Take a measurement at a fixed time (durationTemp = 5000ms, 5s)
+    
+    lastCheck = now;
+    elapsedTime = now;
+  
+    turnLED(ON);
+    String res = getNeededAction();
+    turnLED(OFF);
+
+    if(res == NEEDED_ACTION_HEATING){
+      turnHeating(ON);
+    }else{
+      turnHeating(OFF);
+    }
+
+    if(errorCount >= ERROR_COUNT_BEFORE_RESTART){
+      Serial.println("\nDefined error count (" + String(ERROR_COUNT_BEFORE_RESTART) + ") reched!");
+      doRestart();
+    }
+  }
+  
+}
+ 
+void loop() {
+  long now = millis();
+  server.handleClient();
+  wifiConnectionCheck(now);
+  doOurTask(now);
+}

@@ -1,0 +1,53 @@
+
+#define TITLE          "IoT actuator"
+#define SOFTWARE_NAME  "IoT actuator"
+
+#define LOCATION_NAME  "Futes"
+#define IOT_DEVICE_ID   3
+
+
+#define THERMOSTAT_IP  "192.168.1.107"
+
+// =============================
+// Pinout configuration
+// =============================
+ 
+#define DHT11_PIN                         14 // 14 means D5 in NodeMCU board -> Pin for temperature and humidity sensor
+
+#define SOFT_SERIAL_RX                     5 //  5 means D1 in NodeMCU board
+#define SOFT_SERIAL_TX                     4 //  4 means D2 in NodeMCU board
+
+
+// =============================
+// Wireles configuration
+// =============================
+
+// Server functions
+#define SERVER_PORT                       80
+
+// connect to WiFi
+#define WIFI_TRY_COUNT                    50
+#define WIFI_WAIT_IN_MS                 1000
+
+// delay for normal working
+#define DELAY_BETWEEN_ITERATIONS_IN_MS 30000
+
+#define DELAY_BETWEEN_WIFI_CONNECTION_STATUS_CHECKS_IN_MS 20000
+
+// problem handling
+#define ERROR_COUNT_BEFORE_RESTART         3
+
+
+// =============================
+// logic constat definitions
+// =============================
+
+#define ON                                 1
+#define OFF                                0
+
+#define NOTHING                            0
+#define HEATING                            1
+
+#define NEEDED_ACTION_NOTHING            "0"
+#define NEEDED_ACTION_HEATING            "1"
+#define NEEDED_ACTION_UNKNOWN		   	 "?"
