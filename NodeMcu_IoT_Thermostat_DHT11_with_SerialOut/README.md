@@ -18,9 +18,9 @@ Endpoints:
    - heatIndex (float as string)
    - targetTemp (float as string)
    - overheatingDiff (float as string)
-   - phaseCheckerIP
+   - phaseCheckerIP (as string)
    - phaseStatus (1|0)
-   - heating (1w0)
+   - heating (1|0)
  - /data => show basic sensor values
  - /data2 => show extended sensor values (+ phaseStatus)
  - /set => set needed temperature
