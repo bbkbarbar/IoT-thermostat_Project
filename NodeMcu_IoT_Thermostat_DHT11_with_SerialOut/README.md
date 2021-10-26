@@ -32,16 +32,16 @@ Endpoints:
 
 Version notes:
  - 2.5:
-    - Query phaseStatus infos from other device over WiFi
-    - Handle value settings from REST api calls on specified endpoints
-    - Show current data as webpage
-    - Serve a specified endpoint for actuator what contains only the needed action
+    - Query phaseStatus infos from other device over WiFi ✓
+    - Handle value settings from REST api calls on specified endpoints ✓
+    - Show current data as webpage ✓
+    - Serve a specified endpoint for actuator what contains only the needed action ✓
  - 2.6:
-    - Add hostname to WiFi client
-    - Send data to KaaIoT
+    - Add hostname to WiFi client ✓
+    - Send data to KaaIoT ✓ (b32)
 
 TODO list:
- - Data logging on local mock server should works fine
+ - ~~Data logging on local mock server should works fine~~ ✓
  - tempSet can not be restored properly from EEPROM if it's last value > 255
    (overflow occures)
    Tried to store in 2 places and concatenate.. now working yet.

@@ -33,12 +33,15 @@
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
-#include <ThingSpeak.h>
+
+// KaaIoT
+//#include <PubSubClient.h>
+//#include <ArduinoJson.h>
+//#include "kaa.h"
 
 
 #include "secrets.h"
 #include "params.h"
-#include <EEPROM.h>
 
 DHTesp dht;
 
@@ -359,15 +362,34 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
     http.end();   //Close connection
 }
 
+
 void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity, float tempSet , float overheating , String heating){
 
-    String postData = "{\n";
+    String phaseStatusToSend = "";
+    if(lastPhaseStatus == "1"){
+      phaseStatusToSend = "1";
+    }else{
+      phaseStatusToSend = "10"; 
+    }
+
+    String heatingToSend = "";
+    if(heating == String(HEATING)){
+      heatingToSend = "12";
+    }else{
+      heatingToSend = "0"; 
+    }
+
+    float ct = tempSet + overheating;
+  
+    String postData = 
+                "{\n";
     postData += "\t\"temperature\": " + String(temperature) + ",\n";
     postData += "\t\"tempSet\": "     + String(tempSet) + ",\n";
-    //postData += "\t\"humidity\": "    + String(humidity) + ",\n";
-    //postData += "\t\"overheating\": " + String(overheating) + ",\n";
-    //postData += "\t\"phaseStatus\": " + lastPhaseStatus + ",\n";
-    postData += "\t\"heating\": "     + heating + "\n";
+    postData += "\t\"calculatedTarget\": " + String(ct) + ",\n";
+    postData += "\t\"humidity\": "    + String(humidity) + ",\n";
+    postData += "\t\"overheating\": " + String(overheating) + ",\n";
+    postData += "\t\"phaseStatus\": " + phaseStatusToSend + ",\n";
+    postData += "\t\"heating\": "     + heatingToSend + "\n";
     postData += "}";
 
     Serial.println("PostData:\n" + postData);
@@ -375,14 +397,17 @@ void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity
     // new
     
     String url = String(KAA_POST_PATH);
-    http.begin(client, url.c_str());  //Specify request destination
+    //String url = String(MOCK_SERVICE_PATH);
 
-    String regData = "{\"model\": \"NodeMCU Thermostat\",\n\"mac\": \"00-14-22-01-23-45\"\n}";
-    
+    //http.begin(client, url.c_str());  //Specify request destination
+    WiFiClient wfc;
+    http.begin(wfc, url);  //Specify request destination
+
     //http.addHeader("Content-Type", "text/plain");
+    //http.addHeader("Content-Type", "application/x-www-form-urlencoded");
     http.addHeader("Content-Type", "application/json");
     int httpCode = http.POST(postData);                                  //Send the request
-    Serial.println("POST request sent: " + String(httpCode) + "\n|" + url + "|");
+    Serial.println("POST request sent: " + String(httpCode) + " " + url);
 
     // TODO check http code if needed
 
@@ -390,6 +415,7 @@ void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity
     http.end();   //Close connection
     /**/
 }
+
 
 void GetNeededAction(){
   String message = "" + String(action);
@@ -404,7 +430,6 @@ void HandleData(){
 
 void HandleMultipleData(){
   //Serial.println("HandleData called...");
-  lastPhaseStatus = getCurrentPhaseState();
   String message = "" +  String(valC) + "|" +  String(valH) + "|" + lastPhaseStatus;
   server.send(200, "text/html", message );
 }
@@ -432,7 +457,7 @@ void showPureValues(){
   message += "\t},\n";
   message += "\t\"phaseChecker\": {\n";
   message += "\t\t\"phaseCheckerIP\": \"" + String(PHASE_CHECKER_IP) + "\",\n";
-  message += "\t\t\"phaseStatus\": \"" + getCurrentPhaseState() + "\"\n";
+  message += "\t\t\"phaseStatus\": \"" + lastPhaseStatus + "\"\n";
   message += "\t},\n";
   message += "\t\"heating\": \"" + String(action) + "\"\n";
   message += "}\n";
@@ -600,6 +625,7 @@ short decide(){
   return action;
 }
 
+int updateCounter = 0;
 
 void sensorLoop(long now){
   if( (now - lastTemp) > DELAY_BETWEEN_ITERATIONS_IN_MS ){ //Take a measurement at a fixed time (durationTemp = 5000ms, 5s)
@@ -643,23 +669,6 @@ void sensorLoop(long now){
     Serial.print("\t");
     Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
 
-    //sendLogs(lastPhaseStatus, String(temperature), String(ts), String(oh), String(action) );
-    sendDataToKaaIoT(lastPhaseStatus, valC, humidity, ts, oh, String(action));
-
-    #ifndef SKIP_TS_COMMUNICATION
-    String st = dht.getStatusString();
-    if(st.length() < 4){
-      sendValuesToTSServer(valT, humidity, temperature);
-    }else{
-      //Show temp and/or humidity reading error..
-      //ledBlink(5, 1000, 1000);
-      
-      // Increase error count for restarting after defined max error counts..
-      //errorCount++;
-    }
-    Serial.println("Error count: " + String(errorCount));
-    #endif
-
     decide();
 
     lastTemp = now;
@@ -692,7 +701,17 @@ void sensorLoop(long now){
     #endif
     //serialOut.println("1|25.40|63.00|0");
     serialOut.println(line);
-    
+
+
+
+    delay(1500);
+    if(updateCounter == 1){
+      sendDataToKaaIoT(lastPhaseStatus, valC, humidity, ts, oh, String(action));
+    }
+    updateCounter++;
+    if(updateCounter > 4){
+      updateCounter = 0;
+    }
   
     if(errorCount >= ERROR_COUNT_BEFORE_RESTART){
       Serial.println("\nDefined error count (" + String(ERROR_COUNT_BEFORE_RESTART) + ") reched!");
