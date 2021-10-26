@@ -7,6 +7,28 @@ Required libraries:
 
 Endpoints:
  - /result => for checking wanted status by actuator
+ - /pure => return a JSON object what contains all available data:
+   - IoT device id (int)
+   - BuildNum (int)
+   - location (name like "living room")
+   - elapsedTime (long since device started)
+   - tempC (float as string)
+   - tempF (float as string)
+   - humidity (float as string)
+   - heatIndex (float as string)
+   - targetTemp (float as string)
+   - overheatingDiff (float as string)
+   - phaseCheckerIP
+   - phaseStatus (1|0)
+   - heating (1w0)
+ - /data => show basic sensor values
+ - /data2 => show extended sensor values (+ phaseStatus)
+ - /set => set needed temperature
+   "/set?value=235" (means 23,5°C)
+ - /overheat => set overheating temperature difference
+   "/overheat?value=5" (means 0,5°C)
+ - /rst => reboot device insantly
+
 
 Version notes:
  - 2.5:
@@ -15,6 +37,7 @@ Version notes:
     - Show current data as webpage
     - Serve a specified endpoint for actuator what contains only the needed action
  - 2.6:
+    - Add hostname to WiFi client
     - Send data to KaaIoT
 
 TODO list:
