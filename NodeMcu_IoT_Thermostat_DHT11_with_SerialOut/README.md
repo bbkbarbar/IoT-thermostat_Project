@@ -9,13 +9,13 @@ Endpoints:
  - /result => for checking wanted status by actuator
 
 Version notes:
- 2.5:
+ - 2.5:
     - Query phaseStatus infos from other device over WiFi
     - Handle value settings from REST api calls on specified endpoints
     - Show current data as webpage
     - Serve a specified endpoint for actuator what contains only the needed action
- 2.6:
-    Send data to KaaIoT
+ - 2.6:
+    - Send data to KaaIoT
 
 TODO list:
  - Data logging on local mock server should works fine
