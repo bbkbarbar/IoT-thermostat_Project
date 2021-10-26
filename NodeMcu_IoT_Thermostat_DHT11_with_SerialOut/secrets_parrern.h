@@ -25,6 +25,10 @@
 #endif
 
 
+// =============================
+// KaaIoT connection details
+// =============================
+#define KAA_POST_PATH "https://connect.cloud.kaaiot.com:443/kp1/<API_VERSION>/dcx/<TOKEN>/json"
 
 
 // =============================

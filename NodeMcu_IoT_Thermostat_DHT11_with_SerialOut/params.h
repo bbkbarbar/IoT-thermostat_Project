@@ -1,6 +1,7 @@
 
 #define TITLE          "IoT TH sensor"
 #define SOFTWARE_NAME  "IoT thermostat"
+#define MODULE_NAME    "UI"
 
 #define LOCATION_NAME  "Nappali"
 #define IOT_DEVICE_ID   1

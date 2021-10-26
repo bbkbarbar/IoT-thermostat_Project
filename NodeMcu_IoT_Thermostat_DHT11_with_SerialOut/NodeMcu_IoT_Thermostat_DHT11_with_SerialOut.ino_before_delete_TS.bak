@@ -16,7 +16,7 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v2.6"
+#define VERSION                 "v2.5_sd"
 #define BUILDNUM                      31
 
 #define SERIAL_BOUND_RATE         115200
@@ -58,9 +58,11 @@ HTTPClient http;
 
 
 //==================================
-// KaaIoT
+// ThingSpeak
 //==================================
 WiFiClient client;
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
 
 
 //==================================
@@ -103,11 +105,67 @@ int errorCount = 0;
 unsigned long elapsedTime = 0;
 
 
+#ifndef SKIP_TS_COMMUNICATION
 // ==========================================================================================================================
-//                                                 KaaIOT communication
+//                                                    ThingSpeak communication
 // ==========================================================================================================================
 
+int sendValuesToTSServer(float heatindex, float humidity, float temp1) {
 
+  // ThingSpeak
+  ThingSpeak.begin(client);  // Initialize ThingSpeak
+  ThingSpeak.setField(1, heatindex);
+  ThingSpeak.setField(2, humidity);
+  ThingSpeak.setField(3, temp1);
+
+  // write to the ThingSpeak channel
+  lastTSUpdateStatus = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+
+  if(lastTSUpdateStatus == 200){
+    Serial.println("Channel update successful.");
+    ledBlink(2, 200, 100);
+    return 1;
+  }
+  else{
+    Serial.println("Problem updating channel. HTTP error code " + String(lastTSUpdateStatus));
+    int errorCodeFirstDigit = (abs(lastTSUpdateStatus)/100);
+    ledBlink(errorCodeFirstDigit, 50, 50);
+    // Increase error count for restarting after defined max error counts..
+    errorCount++;
+    return 0;
+  }
+}
+
+int sendValuesToTS(float heatindex, float humidity, float temp1){
+  if (client.connect("api.thingspeak.com",80)){   //   "184.106.153.149" or api.thingspeak.com
+        
+       String postStr = SECRET_WRITE_APIKEY;
+       postStr +="&field1=";
+       postStr += String(heatindex);
+       postStr +="&field2=";
+       postStr += String(humidity);
+       postStr +="&field3=";
+       postStr += String(temp1);
+       postStr += "\r\n\r\n";
+
+       client.print("POST /update HTTP/1.1\n");
+       client.print("Host: api.thingspeak.com\n");
+       client.print("Connection: close\n");
+       client.print("X-THINGSPEAKAPIKEY: " + String(SECRET_WRITE_APIKEY) +"\n");
+       client.print("Content-Type: application/x-www-form-urlencoded\n");
+       client.print("Content-Length: ");
+       client.print(postStr.length());
+       client.print("\n\n");
+       client.print(postStr);
+       Serial.println("Values sent to TS server..");
+
+    }
+    client.stop();
+    delay(100);
+    return 1;
+}
+
+#endif
 
 // ==========================================================================================================================
 //                                                 Hw feedback function
@@ -235,7 +293,7 @@ String generateHtmlBody(){
   String m = "\t<body bgcolor=\"#49B7E8\">";
 
   m += "\t\t<h4>";
-  m += String(SOFTWARE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM) ;
+  m += String(SOFTWARE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM);
   m += "<br>" + String(LOCATION_NAME);
   m += "</h4><br>";
 
@@ -359,35 +417,6 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
     http.end();   //Close connection
 }
 
-void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity, float tempSet , float overheating , String heating){
-     //Declare an object of class HTTPClient
-
-    String postData = "{\n";
-    postData += "\"temperature\": " + String(temperature) + ",\n";
-    postData += "\"tempSet\": "     + String(tempSet) + ",\n";
-    postData += "\"humidity\": "    + String(humidity) + ",\n";
-    postData += "\"overheating\": " + String(overheating) + ",\n";
-    postData += "\"phaseStatus\": " + lastPhaseStatus + ",\n";
-    postData += "\"heating\": "     + heating + "\n";
-    postData += "}";
-
-    Serial.println("PostData:\n" + postData);
-    
-    // new
-    /*
-    String logServerPath = "http://192.168.1.141:8083/datalogger2" + getData;
-    http.begin(client, logServerPath.c_str());  //Specify request destination
-
-    http.addHeader("Content-Type", "text/plain");
-    int httpCode = http.GET();                                  //Send the request
-
-    Serial.println("Logs sent: " + getData);
-
-    //Close connection
-    http.end();   //Close connection
-    /**/
-}
-
 void GetNeededAction(){
   String message = "" + String(action);
   server.send(200, "text/html", message );
@@ -473,7 +502,6 @@ int initWiFi(){
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
-    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
   }else{
     Serial.println("");
     Serial.print("ERROR: Unable to connect to ");
@@ -629,7 +657,7 @@ void sensorLoop(long now){
     Serial.print("\t");
     Serial.print(humidity, 1);
     Serial.print("% \t\t");
-    Serial.print(valC, 1);
+    Serial.print(temperature, 1);
     Serial.print(" C\t\t");
     Serial.print(ts, 1);
     Serial.print(" C\t");
@@ -641,7 +669,6 @@ void sensorLoop(long now){
     Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
 
     //sendLogs(lastPhaseStatus, String(temperature), String(ts), String(oh), String(action) );
-    sendDataToKaaIoT(lastPhaseStatus, valC, humidity, ts, oh, String(action));
 
     #ifndef SKIP_TS_COMMUNICATION
     String st = dht.getStatusString();
