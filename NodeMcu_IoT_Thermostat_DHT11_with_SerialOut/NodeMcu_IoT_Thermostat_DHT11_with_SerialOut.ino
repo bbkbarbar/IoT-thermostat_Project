@@ -17,7 +17,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v2.6"
-#define BUILDNUM                      31
+#define BUILDNUM                      32
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -360,28 +360,31 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
 }
 
 void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity, float tempSet , float overheating , String heating){
-     //Declare an object of class HTTPClient
 
     String postData = "{\n";
-    postData += "\"temperature\": " + String(temperature) + ",\n";
-    postData += "\"tempSet\": "     + String(tempSet) + ",\n";
-    postData += "\"humidity\": "    + String(humidity) + ",\n";
-    postData += "\"overheating\": " + String(overheating) + ",\n";
-    postData += "\"phaseStatus\": " + lastPhaseStatus + ",\n";
-    postData += "\"heating\": "     + heating + "\n";
+    postData += "\t\"temperature\": " + String(temperature) + ",\n";
+    postData += "\t\"tempSet\": "     + String(tempSet) + ",\n";
+    //postData += "\t\"humidity\": "    + String(humidity) + ",\n";
+    //postData += "\t\"overheating\": " + String(overheating) + ",\n";
+    //postData += "\t\"phaseStatus\": " + lastPhaseStatus + ",\n";
+    postData += "\t\"heating\": "     + heating + "\n";
     postData += "}";
 
     Serial.println("PostData:\n" + postData);
     
     // new
-    /*
-    String logServerPath = "http://192.168.1.141:8083/datalogger2" + getData;
-    http.begin(client, logServerPath.c_str());  //Specify request destination
+    
+    String url = String(KAA_POST_PATH);
+    http.begin(client, url.c_str());  //Specify request destination
 
-    http.addHeader("Content-Type", "text/plain");
-    int httpCode = http.GET();                                  //Send the request
+    String regData = "{\"model\": \"NodeMCU Thermostat\",\n\"mac\": \"00-14-22-01-23-45\"\n}";
+    
+    //http.addHeader("Content-Type", "text/plain");
+    http.addHeader("Content-Type", "application/json");
+    int httpCode = http.POST(postData);                                  //Send the request
+    Serial.println("POST request sent: " + String(httpCode) + "\n|" + url + "|");
 
-    Serial.println("Logs sent: " + getData);
+    // TODO check http code if needed
 
     //Close connection
     http.end();   //Close connection
