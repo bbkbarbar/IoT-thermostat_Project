@@ -1,6 +1,13 @@
 // sendHTML(float temperature, float setTemperature, float humidity, short price, short heating);
 String sendHTML(float temperature, float setTemperature, float humidity, short price, short heating){
 
+  String heatingColor = "";
+  if(heating){
+    heatingColor = "#f24e21";
+  }else{
+    heatingColor = "#737373";
+  }
+
   String pg = "";
   pg += "<!DOCTYPE html>";
   pg += "<html>";
@@ -19,7 +26,7 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += ".temperatureSet .reading{color: #F29C21;}";
   pg += ".humidity .reading{color: #3B97D3;}";
   pg += ".phasestatus .reading{color: #955BA5;}";
-  pg += ".altitude .reading{color: #f24e21;}";
+  pg += ".altitude .reading{color: " + heatingColor + ";}";
   pg += ".superscript{font-size: 17px;font-weight: 600;position: absolute;top: 10px;}";
   pg += ".data{padding: 10px;}";
   pg += ".container{display: table;margin: 0 auto;}";
@@ -39,7 +46,7 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "c0,3.083-2.5,5.583-5.583,5.583s-5.583-2.5-5.583-5.583c0-2.279,1.368-4.236,3.326-5.104V24.257C7.462,23.01,8.472,22,9.719,22";
   pg += "s2.257,1.01,2.257,2.257V39.73C13.934,40.597,15.302,42.554,15.302,44.833z'fill=#F29C21 /></g></svg>";
   pg += "</div>";
-  pg += "<div class='side-by-side text'>TemperatureSet</div>";
+  pg += "<div class='side-by-side text'>Set</div>";
   pg += "<div class='side-by-side reading'>";
   pg += String(setTemperature);
   pg += "<span class='superscript'>&deg;C</span></div>";
