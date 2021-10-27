@@ -41,6 +41,8 @@ Version notes:
     - Send data to KaaIoT ✓ (b32)
 
 TODO list:
+ - Store elapsed time since last KaaIoT update sent <br>
+   for using during average calculations
  - ~~Data logging on local mock server should works fine~~ ✓
  - tempSet can not be restored properly from EEPROM if it's last value > 255
    (overflow occures)
