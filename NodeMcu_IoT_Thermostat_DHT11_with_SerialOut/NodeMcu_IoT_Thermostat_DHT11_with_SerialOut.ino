@@ -17,7 +17,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v2.6"
-#define BUILDNUM                      32
+#define BUILDNUM                      33
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -39,9 +39,10 @@
 //#include <ArduinoJson.h>
 //#include "kaa.h"
 
-
 #include "secrets.h"
 #include "params.h"
+
+#include "webUI2.h"
 
 DHTesp dht;
 
@@ -190,6 +191,7 @@ void HandleNotFound(){
   server.send(404, "text/html", message);
 }
 
+
 void actionTempSet(){
   String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
   tempSet = value.toInt();
@@ -204,6 +206,7 @@ void actionTempSet(){
   lastTemp = lastTemp - DELAY_BETWEEN_ITERATIONS_IN_MS;
   server.send(200, "text/html", m );
 }
+
 
 void actionOverheatSet(){
   String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
@@ -220,6 +223,8 @@ void actionOverheatSet(){
   lastTemp = lastTemp - DELAY_BETWEEN_ITERATIONS_IN_MS;
   server.send(200, "text/html", m );
 }
+
+
 
 void HandleNotRstEndpoint(){
   doRestart();
@@ -310,8 +315,19 @@ void HandleRoot(){
   //Serial.println("HandleRoot called...");
   //String message = "<!DOCTYPE html><html lang=\"en\">";
   //message += "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>";
-  String message = generateHtmlHeader();
+  String message = "";
+
+  short price = 0;
+  if(lastPhaseStatus == String(PHASE_STATUS_EXPENSIVE)){
+    price = 0;
+  }else{
+    price = 1;
+  }
+  message = sendHTML(valC, ((float)(tempSet)/10), valH, price, action);
+  /*
+  message = generateHtmlHeader();
   message += generateHtmlBody();
+  /**/
 
   server.send(200, "text/html", message );
 }
@@ -344,6 +360,8 @@ String getCurrentPhaseState(){
     return payload;
 }
 
+
+#ifdef DEBUG_MODE
 void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh , String heating){
      //Declare an object of class HTTPClient
 
@@ -361,6 +379,7 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
     //Close connection
     http.end();   //Close connection
 }
+#endif
 
 
 void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity, float tempSet , float overheating , String heating){
