@@ -62,6 +62,9 @@ String getHTML(short heating){
 	pg += "</div>\n";
 	pg += "</div>\n";
 	pg += "</div>\n";
+	#ifdef USE_MOCK
+		pg +="<h1>MOCK USED</h1>\n";
+	#endif
 	pg += "</body></html>\n";
 
 	return pg;

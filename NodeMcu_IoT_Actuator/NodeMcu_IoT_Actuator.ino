@@ -15,7 +15,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v0.2"
-#define BUILDNUM                       6
+#define BUILDNUM                       7
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -323,6 +323,9 @@ void setup() {
 
   Serial.println("\n");
   Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION));
+  #ifdef USE_MOCK
+    Serial.println("MOCK USED!");
+  #endif
   Serial.println("Thermostat IP: " + String(THERMOSTAT_IP));
 
 
