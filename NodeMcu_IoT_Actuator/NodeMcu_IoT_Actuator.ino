@@ -1,10 +1,10 @@
-
-#define USE_SECRET  1
-
 // Used board setting:
 // WeMos D1 R1
 
 //#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+
+#define USE_SECRET  1
+//#define USE_MOCK
 
 // 1 "TP-Link_BB"    
 // 2 "BB_Home2"  
@@ -14,8 +14,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v0.1"
-#define BUILDNUM                       2
+#define VERSION                   "v0.2"
+#define BUILDNUM                       4
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -80,26 +80,7 @@ unsigned long elapsedTime = 0;
 //                                                 Hw feedback function
 // ==========================================================================================================================
 
-void turnLED(int state){
-  if(state > 0){
-    digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    // but actually the LED is on; this is because
-    // it is active low on the ESP-01)
-  }else{
-    digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
-  }
-}
 
-void ledBlink(int blinkCount, int onTime, int offTime){
-  for(short int i=0; i<blinkCount; i++){
-    turnLED(ON);
-    delay(onTime);                      // Wait for a second
-    turnLED(OFF);
-    if(i < blinkCount-1){
-      delay(offTime);
-    }
-  }
-}
 
 // ==========================================================================================================================
 //                                                     Other methods
@@ -138,9 +119,9 @@ short loadFromEEPROM(int addr){
 void turnHeating(short state){
 
    if(state == ON){
-    digitalWrite(RELAY_PIN, LOW);   // due to using low level trigger-ed relay module
+    digitalWrite(RELAY_PIN, HIGH);   // due to using BC337 NPN transistor on output
   }else{
-    digitalWrite(RELAY_PIN, HIGH);  
+    digitalWrite(RELAY_PIN, LOW);  
   }
   
   //TODO HERE
@@ -165,13 +146,21 @@ void HandleNotFound(){
   server.send(404, "text/html", message);
 }
 
-void actionTempSet(){
+/*
+void turnOutput(){
   String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
   int v = value.toInt();
-
+  if(v == 1){
+    digitalWrite(RELAY_PIN, HIGH);
+    Serial.println("Out: high");
+  }else{
+    digitalWrite(RELAY_PIN, LOW);
+    Serial.println("Out: low");
+  }
   String m = String("Value received:\n") + String(v);
   server.send(200, "text/html", m );
 }
+/**/
 
 
 void HandleNotRstEndpoint(){
@@ -223,20 +212,23 @@ void HandleRoot(){
 String getNeededAction(){
     // old
     //http.begin("192.168.1.170:81/data");  //Specify request destination
-    // new
+
+    WiFiClient wc;
     
-    //String thermostatServerPath = "http://" + String(THERMOSTAT_IP) + "/result";
-    String thermostatServerPath = "http://192.168.1.107/result";
-    http.begin(client, thermostatServerPath.c_str());  //Specify request destination
+    String thermostatServerPath = "http://" + String(THERMOSTAT_IP) + "/result";
+    //String thermostatServerPath = "http://192.168.1.141:8083/result";
+    //String thermostatServerPath = "http://192.168.1.107/result";
+    http.begin(wc, thermostatServerPath.c_str());  //Specify request destination
 
     int httpCode = http.GET();                                  //Send the request
     
     String payload = "";
+    Serial.println("httpCode: " + String(httpCode));
     if (httpCode != 0) { //Check the returning code
       payload = http.getString();   //Get the request response payload
     }else{
       payload = String(NEEDED_ACTION_UNKNOWN);
-      Serial.println("httpCode: " + String(httpCode));
+      //Serial.println("httpCode: " + String(httpCode));
     }
     //Serial.println("");
  
@@ -306,19 +298,14 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   pinMode(RELAY_PIN, OUTPUT);
+  
   turnHeating(OFF);
 
   elapsedTime = millis();
-  
-  turnLED(ON);
-
   errorCount = 0;
   
   Serial.begin(SERIAL_BOUND_RATE);
   Serial.println();
-  Serial.println("\n");
-  Serial.print(String(TITLE) + " ");
-  Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION));
 
   // EEPROM
   EEPROM.begin(128);
@@ -327,16 +314,20 @@ void setup() {
 
   initWiFi();
 
+  Serial.println("\n");
+  Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION));
+  Serial.println("Thermostat IP: " + String(THERMOSTAT_IP));
+
 
   server.on("/", HandleRoot);
   server.on("/data", HandleData);
+  //server.on("/set", turnOutput);
   //server.on ("/save", handleSave);
   server.on("/rst", HandleNotRstEndpoint);
   server.onNotFound( HandleNotFound );
   server.begin();
   Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + String("@ port: ") + String(SERVER_PORT) );
 
-  turnLED(OFF);
 
   //TODO
   delay(500);
@@ -355,14 +346,11 @@ void wifiConnectionCheck(long now){
     switch (WiFi.status()){
       case WL_NO_SSID_AVAIL:
         Serial.println("Configured SSID cannot be reached");
-        turnLED(ON);
         break;
       case WL_CONNECTED:
-        turnLED(OFF);
         //Serial.println("Connection successfully established");
         break;
       case WL_CONNECT_FAILED:
-        turnLED(ON);
         Serial.println("Connection failed");
         //initWiFi();
         break;
@@ -382,9 +370,7 @@ void doOurTask(long now){
     lastCheck = now;
     elapsedTime = now;
   
-    turnLED(ON);
     String res = getNeededAction();
-    turnLED(OFF);
 
     if(res == NEEDED_ACTION_HEATING){
       turnHeating(ON);
@@ -393,6 +379,7 @@ void doOurTask(long now){
       turnHeating(OFF);
       action = 0;
     }
+    Serial.println("Action received: " + String(action));
 
     if(errorCount >= ERROR_COUNT_BEFORE_RESTART){
       Serial.println("\nDefined error count (" + String(ERROR_COUNT_BEFORE_RESTART) + ") reched!");
@@ -407,4 +394,5 @@ void loop() {
   server.handleClient();
   wifiConnectionCheck(now);
   doOurTask(now);
+  /**/
 }

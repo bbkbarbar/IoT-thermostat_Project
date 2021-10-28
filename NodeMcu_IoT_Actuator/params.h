@@ -6,7 +6,14 @@
 #define IOT_DEVICE_ID   3
 
 
-#define THERMOSTAT_IP  "192.168.1.107"
+#define THERMOSTAT_PROD_IP       "192.168.1.107"
+#define THERMOSTAT_MOCK_IP  "192.168.1.141:8083"
+
+#ifdef USE_MOCK
+    #define THERMOSTAT_IP THERMOSTAT_MOCK_IP
+#else
+    #define THERMOSTAT_IP THERMOSTAT_PROD_IP
+#endif
 
 // =============================
 // Pinout configuration
@@ -14,7 +21,7 @@
  
 #define DHT11_PIN                         14 // 14 means D5 in NodeMCU board -> Pin for temperature and humidity sensor
 
-#define RELAY_PIN                         2  // 2 means D4 in Wemos D1 Mini board
+#define RELAY_PIN                         D2  // 2 means D4 in Wemos D1 Mini board
                                              // 5 means D1 in NodeMCU board
                                              // 17 means D4 in NodeMCU board
 
