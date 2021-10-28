@@ -15,7 +15,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v0.2"
-#define BUILDNUM                       5
+#define BUILDNUM                       6
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -31,6 +31,8 @@
 
 #include "secrets.h"
 #include "params.h"
+
+#include "actuator_ui2.h"
 
 
 //==================================
@@ -204,8 +206,12 @@ String generateHtmlBody(){
 }
 
 void HandleRoot(){
-  String message = generateHtmlHeader();
+  String message = "";
+  message = getHTML(action);
+  /*
+  message = generateHtmlHeader();
   message += generateHtmlBody();
+  /**/
   server.send(200, "text/html", message );
 }
 
