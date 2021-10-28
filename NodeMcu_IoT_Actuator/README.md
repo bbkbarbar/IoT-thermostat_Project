@@ -14,6 +14,7 @@ Versions:
      for testing purpose
    - getting action from thermostat (mock or real) <b>WORKS FINE</b> b4
    - Using human-readable hostname b5
+   - WebUI 2 (can shows mock-useage too) b9
 
 
  TODO list:

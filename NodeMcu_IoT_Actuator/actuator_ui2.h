@@ -64,7 +64,14 @@ String getHTML(short heating){
 	pg += "</div>\n";
 	#ifdef USE_MOCK
 		pg +="<h1>MOCK USED</h1>\n";
+		#ifdef THERMOSTAT_MOCK_IP
+			pg +="<h3>Mock thermostat ip:</h3>\n";
+			pg +="<h2>" + String(THERMOSTAT_MOCK_IP) + "</h2>\n";
+		#else
+			pg +="<h3>Mock thermostat ip UNDEFINED!</h3>\n";
+		#endif
 	#endif
+	
 	pg += "</body></html>\n";
 
 	return pg;

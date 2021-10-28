@@ -15,7 +15,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v0.2"
-#define BUILDNUM                       8
+#define BUILDNUM                       9
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -132,6 +132,7 @@ void turnHeating(short state){
 // ==========================================================================================================================
 //                                                  Web server functions
 // ==========================================================================================================================
+
 
 void HandleNotFound(){
   String message = "File Not Found\n\n";
@@ -264,7 +265,7 @@ int initWiFi(){
 // ==========================================================================================================================
 //                                                        Init
 // ==========================================================================================================================
- 
+
 void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
