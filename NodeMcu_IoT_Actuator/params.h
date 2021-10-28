@@ -1,13 +1,14 @@
 
-#define TITLE          "IoT actuator"
-#define SOFTWARE_NAME  "IoT actuator"
+#define SOFTWARE_NAME  "IoT thermostat"
+#define TITLE          "IoT TH actuator"
+#define MODULE_NAME    "actuator"
 
 #define LOCATION_NAME  "Futes"
 #define IOT_DEVICE_ID   3
 
 
 #define THERMOSTAT_PROD_IP       "192.168.1.107"
-#define THERMOSTAT_MOCK_IP  "192.168.1.141:8083"
+#define THERMOSTAT_MOCK_IP  "192.168.1.143:8083"
 
 #ifdef USE_MOCK
     #define THERMOSTAT_IP THERMOSTAT_MOCK_IP

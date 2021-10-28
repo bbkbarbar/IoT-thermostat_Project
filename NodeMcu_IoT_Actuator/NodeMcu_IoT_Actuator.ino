@@ -4,7 +4,7 @@
 //#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
 
 #define USE_SECRET  1
-//#define USE_MOCK
+#define USE_MOCK
 
 // 1 "TP-Link_BB"    
 // 2 "BB_Home2"  
@@ -15,7 +15,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v0.2"
-#define BUILDNUM                       4
+#define BUILDNUM                       5
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -281,6 +281,7 @@ int initWiFi(){
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
+    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
   }else{
     Serial.println("");
     Serial.print("ERROR: Unable to connect to ");
