@@ -8,6 +8,8 @@
 
 //#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
 
+//#define SKIP_KAAIOT_SEND
+
 // 1 "TP-Link_BB"    
 // 2 "BB_Home2"  
 // 3 "P20 Pro"    
@@ -17,7 +19,10 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v2.6"
-#define BUILDNUM                      33
+#define BUILDNUM                      35
+/*
+ * 
+ */
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -100,7 +105,7 @@ String lastPhaseStatus = "";
 //==================================
 // Other variables
 //==================================
-long lastTemp = 0;      //time of the last measurement
+long timeOfLastMeasurement = 0;      //time of the last measurement
 long lastWiFiCheck = 0;
 int errorCount = 0;
 
@@ -203,7 +208,7 @@ void actionTempSet(){
   String m = String("Target temperature value set:\n") + String(ts) + "C";
 
   //To force quick reaction of set comand
-  lastTemp = lastTemp - DELAY_BETWEEN_ITERATIONS_IN_MS;
+  timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
   server.send(200, "text/html", m );
 }
 
@@ -220,7 +225,7 @@ void actionOverheatSet(){
   String m = String("Overheating value set: ") + String(oh)  + "C";
 
   //To force quick reaction of set comand
-  lastTemp = lastTemp - DELAY_BETWEEN_ITERATIONS_IN_MS;
+  timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
   server.send(200, "text/html", m );
 }
 
@@ -230,6 +235,7 @@ void HandleNotRstEndpoint(){
   doRestart();
 }
 
+/*
 String generateHtmlHeader(){
   String h = "<!DOCTYPE html>";
   h += "<html lang=\"en\">";
@@ -310,13 +316,13 @@ String generateHtmlBody(){
   
   return m;
 }
+/**/
 
 void HandleRoot(){
   //Serial.println("HandleRoot called...");
   //String message = "<!DOCTYPE html><html lang=\"en\">";
   //message += "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>";
   String message = "";
-
   short price = 0;
   if(lastPhaseStatus == String(PHASE_STATUS_EXPENSIVE)){
     price = 0;
@@ -328,18 +334,17 @@ void HandleRoot(){
   message = generateHtmlHeader();
   message += generateHtmlBody();
   /**/
-
   server.send(200, "text/html", message );
 }
 
-String getCurrentPhaseState(){
-     //Declare an object of class HTTPClient
- 
+
+String getCurrentPhaseState(int retryCount){
+     WiFiClient myWC;
     // old
     //http.begin("192.168.1.170:81/data");  //Specify request destination
     // new
     String statusServerPath = "http://" + String(PHASE_CHECKER_IP) + ":81/data";
-    http.begin(client, statusServerPath.c_str());  //Specify request destination
+    http.begin(myWC, statusServerPath.c_str());  //Specify request destination
 
 
     int httpCode = http.GET();                                  //Send the request
@@ -354,10 +359,14 @@ String getCurrentPhaseState(){
       payload = String(PHASE_STATUS_UNKNOWN);
       Serial.println("httpCode: " + String(httpCode));
     }
-    //Serial.println("");
- 
     http.end();   //Close connection
-    return payload;
+
+    if( (retryCount > 0) && (payload == String(PHASE_STATUS_UNKNOWN)) ){
+      // probably need to retry
+      return getCurrentPhaseState(--retryCount);
+    }else{
+      return payload;
+    }
 }
 
 
@@ -382,10 +391,10 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
 #endif
 
 
-void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity, float tempSet , float overheating , String heating){
+void sendDataToKaaIoT(short retryCount, String ps, float temperature , float humidity, float tempSet , float overheating , String heating){
 
     String phaseStatusToSend = "";
-    if(lastPhaseStatus == "1"){
+    if(ps == "1"){
       phaseStatusToSend = "1";
     }else{
       phaseStatusToSend = "10"; 
@@ -407,6 +416,10 @@ void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity
     postData += "\t\"calculatedTarget\": " + String(ct) + ",\n";
     postData += "\t\"humidity\": "    + String(humidity) + ",\n";
     postData += "\t\"overheating\": " + String(overheating) + ",\n";
+
+    // NOT IMPORTANT
+    postData += "\t\"RSSI\": " + String(WiFi.RSSI()) + ",\n";
+    
     postData += "\t\"phaseStatus\": " + phaseStatusToSend + ",\n";
     postData += "\t\"heating\": "     + heatingToSend + "\n";
     postData += "}";
@@ -428,11 +441,14 @@ void sendDataToKaaIoT(String lastPhaseStatus, float temperature , float humidity
     int httpCode = http.POST(postData);                                  //Send the request
     Serial.println("POST request sent: " + String(httpCode) + " " + url);
 
-    // TODO check http code if needed
-
     //Close connection
     http.end();   //Close connection
-    /**/
+
+    // TODO check http code if needed
+    if( (httpCode != 200) && (retryCount > 0) ){
+      sendDataToKaaIoT( (retryCount-1), ps, temperature, humidity, tempSet, overheating, heating);
+    }
+
 }
 
 
@@ -520,7 +536,7 @@ int initWiFi(){
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
-    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
+    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " [" + String(IOT_DEVICE_ID) + "] " + String(VERSION) + " b" + String(BUILDNUM));
   }else{
     Serial.println("");
     Serial.print("ERROR: Unable to connect to ");
@@ -529,6 +545,36 @@ int initWiFi(){
   }
 }
 
+
+void wifiConnectionCheck(long now){
+  //TODO: need to add optional macro for Serial prints of WiFi state
+  if( (now - lastWiFiCheck) >= DELAY_BETWEEN_WIFI_CONNECTION_STATUS_CHECKS_IN_MS ){
+    lastWiFiCheck = now;
+    
+    switch (WiFi.status()){
+      case WL_NO_SSID_AVAIL:
+        Serial.println("Configured SSID cannot be reached");
+        serialOut.println("IWiFi\nUnavailable");
+        turnLED(ON);
+        break;
+      case WL_CONNECTED:
+        turnLED(OFF);
+        //Serial.println("Connection successfully established");
+        break;
+      case WL_CONNECT_FAILED:
+        turnLED(ON);
+        Serial.println("Connection failed");
+        serialOut.println("IConnection\nfailed");
+        //initWiFi();
+        break;
+    }
+    /*
+    Serial.printf("Connection status: %d\n", WiFi.status());
+    Serial.print("RRSI: ");
+    Serial.println(WiFi.RSSI());
+    /**/
+  }
+}
 
 // ==========================================================================================================================
 //                                                        Init
@@ -587,7 +633,7 @@ void setup() {
   turnLED(OFF);
 
   Serial.println("PhaseStatus\tStatus\tHumidity (%)\tTemperature (C)\tTempSet\tOverheating (.C)\t(F)\tHeatIndex (C)\t(F)");
-  lastTemp = -100000;
+  timeOfLastMeasurement = -100000;
 
   delay(10000);
   
@@ -597,36 +643,6 @@ void setup() {
 // ==========================================================================================================================
 //                                                        Loop
 // ==========================================================================================================================
-
-void wifiConnectionCheck(long now){
-  //TODO: need to add optional macro for Serial prints of WiFi state
-  if( (now - lastWiFiCheck) >= DELAY_BETWEEN_WIFI_CONNECTION_STATUS_CHECKS_IN_MS ){
-    lastWiFiCheck = now;
-    
-    switch (WiFi.status()){
-      case WL_NO_SSID_AVAIL:
-        Serial.println("Configured SSID cannot be reached");
-        serialOut.println("IWiFi\nUnavailable");
-        turnLED(ON);
-        break;
-      case WL_CONNECTED:
-        turnLED(OFF);
-        //Serial.println("Connection successfully established");
-        break;
-      case WL_CONNECT_FAILED:
-        turnLED(ON);
-        Serial.println("Connection failed");
-        serialOut.println("IConnection\nfailed");
-        //initWiFi();
-        break;
-    }
-    /*
-    Serial.printf("Connection status: %d\n", WiFi.status());
-    Serial.print("RRSI: ");
-    Serial.println(WiFi.RSSI());
-    /**/
-  }
-}
 
 
 short decide(){
@@ -646,17 +662,41 @@ short decide(){
 
 int updateCounter = 0;
 
-void sensorLoop(long now){
-  if( (now - lastTemp) > DELAY_BETWEEN_ITERATIONS_IN_MS ){ //Take a measurement at a fixed time (durationTemp = 5000ms, 5s)
-    //delay(dht.getMinimumSamplingPeriod());
-    //delay(dht.getMinimumSamplingPeriod());
-    lastPhaseStatus = getCurrentPhaseState();
-    if(lastPhaseStatus == String(PHASE_STATUS_UNKNOWN)){
-      // try again one more time
-      lastPhaseStatus = getCurrentPhaseState();
+String getDisplayContent(String phaseStatusStr, int tempInt, int humidityInt, int ts, int heatingAction ){
+    String line = "D" + phaseStatusStr;
+    String tempStr = String(tempInt);
+    if(tempInt < 100){
+      tempStr = "0" + tempStr;
     }
+    String setStr = String(ts);
     
-    lastTemp = now;
+    if(ts < 100){
+      setStr = "0" + setStr;
+    }
+    if(ts < 10){
+      setStr = "0" + setStr;
+    }
+    line += "-" + String(humidityInt) + "%";
+    line += tempStr + "C";
+    line += setStr + "C";
+    // "heating?" part
+    line += heatingAction;
+  
+    #ifdef SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+      Serial.println("\"" + line + "\"");
+    #endif
+  
+    return line;
+}
+
+
+void sensorLoop(long now){
+  if( (now - timeOfLastMeasurement) > DELAY_BETWEEN_ITERATIONS_IN_MS ){ //Take a measurement at a fixed time (durationTemp = 5000ms, 5s)
+    //delay(dht.getMinimumSamplingPeriod());
+
+    
+    lastPhaseStatus = getCurrentPhaseState(PHASE_STATUS_RETRY_COUNT);
+    
     elapsedTime = now;
   
     turnLED(ON);
@@ -686,46 +726,26 @@ void sensorLoop(long now){
     Serial.print(" F\t");
     Serial.print(valT, 1);
     Serial.print("\t");
-    Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
+    Serial.print(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
+    Serial.print("\t");
+    Serial.println(String(WiFi.RSSI()));
 
     decide();
 
-    lastTemp = now;
+    timeOfLastMeasurement = now;
     int tempInt = valC*10;
     int humidityInt = valH;
-    String tempStr = String(tempInt);
-    if(tempInt < 100){
-      tempStr = "0" + tempStr;
-    }
-    String setStr = String(tempSet);
-    
-    if(tempSet < 100){
-      setStr = "0" + setStr;
-    }
-    if(tempSet < 10){
-      setStr = "0" + setStr;
-    }
-    /**/
-    
-    
-    String line = "D" + String(lastPhaseStatus);
-    line += "-" + String(humidityInt) + "%";
-    line += tempStr + "C";
-    line += setStr + "C";
-    // "heating?" part
-    line += action;
-
-    #ifdef SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
-      Serial.println("\"" + line + "\"");
-    #endif
-    //serialOut.println("1|25.40|63.00|0");
+    String line = getDisplayContent(lastPhaseStatus, tempInt, humidityInt, tempSet, action); 
     serialOut.println(line);
-
 
 
     delay(1500);
     if(updateCounter == 1){
-      sendDataToKaaIoT(lastPhaseStatus, valC, humidity, ts, oh, String(action));
+      #ifndef SKIP_KAAIOT_SEND
+      
+        sendDataToKaaIoT(KAAIOT_RETRY_COUNT, lastPhaseStatus, valC, humidity, ts, oh, String(action));
+        
+      #endif
     }
     updateCounter++;
     if(updateCounter > 4){
