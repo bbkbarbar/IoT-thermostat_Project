@@ -35,8 +35,9 @@ Versions:
 
 
  TODO list:
-  - Figure out WeMos board's pin configuration  
-  - create functions for reading ADC <br>
-    for observe heating phases of factory thermostat
-  - Create circuite for "observe-function"
+  - Create set..-endpoint for thermostat IP
+  - ~~Figure out WeMos board's pin configuration~~
+  - ~~create functions for reading ADC <br>
+    for observe heating phases of factory thermostat~~
+  - ~~Create circuite for "observe-function"~~
   - create methods for KaaIoT data upload (for observe function)
