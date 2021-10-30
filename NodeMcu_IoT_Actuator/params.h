@@ -7,7 +7,7 @@
 #define IOT_DEVICE_ID   3
 
 
-#define THERMOSTAT_PROD_IP       "192.168.1.102"
+#define THERMOSTAT_PROD_IP       "192.168.1.171"
 #define THERMOSTAT_MOCK_IP  "192.168.1.143:8083"
 
 #ifdef USE_MOCK
@@ -63,3 +63,6 @@
 #define NEEDED_ACTION_NOTHING            "0"
 #define NEEDED_ACTION_HEATING            "1"
 #define NEEDED_ACTION_UNKNOWN		   	     "?"
+
+#define MODE_FORWARDER                     0
+#define MODE_ACTUATOR                      7

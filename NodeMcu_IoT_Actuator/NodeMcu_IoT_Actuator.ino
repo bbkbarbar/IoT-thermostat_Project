@@ -1,7 +1,7 @@
 // Used board setting:
 // WeMos D1 R1
 
-#define OVERRIDE_WITH_FACTORY_CONTROL
+//#define OVERRIDE_WITH_FACTORY_CONTROL
 
 #define USE_SECRET  1
 #define USE_MOCK
@@ -14,8 +14,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v1.0"
-#define BUILDNUM                      14
+#define VERSION                   "v1.2"
+#define BUILDNUM                      16
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -58,6 +58,7 @@ WiFiClient client;
 //==================================
 // EEPROM
 //==================================
+#define EEPROM_ADDR_MODE           8
 #define EEPROM_ADDR_IP1            1
 #define EEPROM_ADDR_IP2            2
 #define EEPROM_ADDR_IP3            3
@@ -69,6 +70,8 @@ WiFiClient client;
 //==================================
 
 short action = NOTHING; // can be NOTHING or HEATING
+
+short mode = MODE_FORWARDER;
 
 //==================================
 // Other variables
@@ -224,7 +227,7 @@ void HandleNotRstEndpoint(){
 
 void HandleRoot(){
   String message = "";
-  message = getHTML(action, WiFi.RSSI());
+  message = getHTML(action, WiFi.RSSI(), mode);
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
@@ -235,6 +238,25 @@ void HandleRoot(){
 void HandleGetFactoryControlState(){
   server.send(200, "text/html", readFactoryInput() );
   Serial.println("Factory control value sent..");
+}
+
+void actionModeSet(){
+  String value = server.arg("mode"); //this lets you access a query param (http://x.x.x.x/set?value=12)
+  short wantedMode = value.toInt();
+
+  if( (wantedMode == 1) || (wantedMode == 7)){
+    mode = MODE_ACTUATOR;
+  }else{
+    mode = MODE_FORWARDER;
+  }
+  
+  // save into eeprom
+  EEPROM.write(EEPROM_ADDR_MODE, mode);
+  EEPROM.commit();
+
+  
+  String m = "Mode set to: " + (mode==MODE_FORWARDER?String("FORWARDER"):String("Actuator")) + "<br><a href=http://" + WiFi.localIP().toString() + ">Main page</a>";
+  server.send(200, "text/html", m );/**/
 }
 
 String getNeededAction(){
@@ -357,6 +379,7 @@ void setup() {
   EEPROM.begin(128);
   // EEPROM read methods can not be used before the first write method..
   //tempSet = loadFromEEPROM(eepromAddr);
+  mode = loadFromEEPROM(EEPROM_ADDR_MODE);
   /*
   String thermostatIP = String(EEPROM.read(EEPROM_ADDR_IP1))  + "."
                       + String(EEPROM.read(EEPROM_ADDR_IP2))  + "."
@@ -382,6 +405,7 @@ void setup() {
 
   server.on("/", HandleRoot);
   server.on("/fc", HandleGetFactoryControlState);
+  server.on("/set", actionModeSet);
   server.on("/data", HandleData);
   //server.on("/set", turnOutput);
   //server.on ("/save", handleSave);
@@ -434,11 +458,11 @@ void doOurTask(long now){
     elapsedTime = now;
 
     String res = "";
-    #ifndef OVERRIDE_WITH_FACTORY_CONTROL
-     res = getNeededAction();
-    #else
+    if(mode == MODE_ACTUATOR){
+      res = getNeededAction(); 
+    }else{
      res = readFactoryInput();
-    #endif
+    }
 
     if(res == NEEDED_ACTION_HEATING){
       turnHeating(ON);

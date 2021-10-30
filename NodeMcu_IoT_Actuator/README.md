@@ -10,6 +10,12 @@ Circuit:
 Required libraries:
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
+ Endpoint:
+  - / => Information page
+  - /set => set mode (forwarder or actuator)
+    - /set?mode=0  means "forwarder mode"
+    - /set?mode=1  >> means "actuator mode"
+
 Versions:
  - v0.1: basic functions
  - v0.2:
@@ -23,6 +29,9 @@ Versions:
  - v1.0:
      - Can "forward" factory actuator's state
      - Can show factory actuator's state over "/fc" -endpoint
+ - v1.2:
+     - /set endpoint added. <br>
+     Mode can be set over it
 
 
  TODO list:
