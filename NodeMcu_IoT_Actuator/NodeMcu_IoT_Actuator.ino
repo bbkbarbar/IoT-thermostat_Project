@@ -15,7 +15,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v0.2"
-#define BUILDNUM                       9
+#define BUILDNUM                      11
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -118,16 +118,6 @@ short loadFromEEPROM(int addr){
   return value;
 }
 
-void turnHeating(short state){
-
-   if(state == ON){
-    digitalWrite(RELAY_PIN, HIGH);   // due to using BC337 NPN transistor on output
-  }else{
-    digitalWrite(RELAY_PIN, LOW);  
-  }
-  
-  //TODO HERE
-}
 
 // ==========================================================================================================================
 //                                                  Web server functions
@@ -164,6 +154,52 @@ void turnOutput(){
   server.send(200, "text/html", m );
 }
 /**/
+
+byte sendDataToKaaIoT(short retryCount, short heating){
+
+    String heatingToSend = "";
+    if(heating == 1){
+      heatingToSend = "13";
+    }else{
+      heatingToSend = "0"; 
+    }
+
+    String postData = 
+                "{\n";
+
+    // NOT IMPORTANT
+    postData += "\t\"RSSI-" + String(MODULE_NAME) + "\": " + String(WiFi.RSSI()) + ",\n";
+    
+    postData += "\t\"Actuator-heating\": "     + heatingToSend + "\n";
+    postData += "}";
+
+    Serial.println("PostData:\n" + postData);
+    
+    // new
+    
+    String url = String(KAA_POST_PATH);
+    //String url = String(MOCK_SERVICE_PATH);
+
+    //http.begin(client, url.c_str());  //Specify request destination
+    WiFiClient wfc;
+    http.begin(wfc, url);  //Specify request destination
+
+    //http.addHeader("Content-Type", "text/plain");
+    //http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    http.addHeader("Content-Type", "application/json");
+    int httpCode = http.POST(postData);                                  //Send the request
+    Serial.println("POST request sent: " + String(httpCode) + " " + url);
+
+    //Close connection
+    http.end();   //Close connection
+
+    // TODO check http code if needed
+    if( (httpCode != 200) && (retryCount > 0) ){
+      sendDataToKaaIoT( (retryCount-1), heating);
+    }
+
+    return ((httpCode == 200)?1:0);
+}
 
 
 void HandleNotRstEndpoint(){
@@ -262,6 +298,19 @@ int initWiFi(){
 }
 
 
+void turnHeating(short state){
+
+   if(state == ON){
+    digitalWrite(RELAY_PIN, HIGH);   // due to using BC337 NPN transistor on output
+  }else{
+    digitalWrite(RELAY_PIN, LOW);  
+  }
+  
+  //TODO HERE
+}
+
+
+
 // ==========================================================================================================================
 //                                                        Init
 // ==========================================================================================================================
@@ -338,6 +387,7 @@ void wifiConnectionCheck(long now){
   }
 }
 
+long lastPublish = 0;
 
 void doOurTask(long now){
   if( (now - lastCheck) > DELAY_BETWEEN_ITERATIONS_IN_MS ){ //Take a measurement at a fixed time (durationTemp = 5000ms, 5s)
@@ -355,6 +405,17 @@ void doOurTask(long now){
       action = 0;
     }
     Serial.println("Action received: " + String(action));
+
+
+    /*
+    if(now - lastPublish > DELAY_BETWEEN_PUBLISHES_IN_MS){
+      byte updateDone = sendDataToKaaIoT(1, action);
+      if(updateDone){
+        
+      }
+      lastPublish = now;
+    }
+    /**/
 
     if(errorCount >= ERROR_COUNT_BEFORE_RESTART){
       Serial.println("\nDefined error count (" + String(ERROR_COUNT_BEFORE_RESTART) + ") reched!");
