@@ -1,7 +1,7 @@
 // Used board setting:
 // WeMos D1 R1
 
-//#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+#define OVERRIDE_WITH_FACTORY_CONTROL
 
 #define USE_SECRET  1
 #define USE_MOCK
@@ -14,8 +14,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v0.3"
-#define BUILDNUM                      12
+#define VERSION                   "v1.0"
+#define BUILDNUM                      14
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -58,8 +58,10 @@ WiFiClient client;
 //==================================
 // EEPROM
 //==================================
-int eepromAddr =                   1;
-int eepromAddr2 =                  4;
+#define EEPROM_ADDR_IP1            1
+#define EEPROM_ADDR_IP2            2
+#define EEPROM_ADDR_IP3            3
+#define EEPROM_ADDR_IP4            4
 
 
 //==================================
@@ -79,9 +81,23 @@ unsigned long elapsedTime = 0;
 
 
 // ==========================================================================================================================
-//                                                 Hw feedback function
+//                                                     Hw function
 // ==========================================================================================================================
 
+String readFactoryInput(){
+  //TODO
+  int adc = analogRead(A0);
+  if(adc > 680){
+    Serial.println("Factory input: " + String(NEEDED_ACTION_HEATING) );
+    return String(NEEDED_ACTION_HEATING);
+  }
+  if(adc < 340){
+    Serial.println("Factory input: " + String(NEEDED_ACTION_NOTHING) );
+    return String(NEEDED_ACTION_NOTHING);
+  }
+  Serial.println("Factory input: " + String(NEEDED_ACTION_UNKNOWN) );
+  return String(NEEDED_ACTION_UNKNOWN);
+}
 
 
 // ==========================================================================================================================
@@ -216,6 +232,11 @@ void HandleRoot(){
   server.send(200, "text/html", message );
 }
 
+void HandleGetFactoryControlState(){
+  server.send(200, "text/html", readFactoryInput() );
+  Serial.println("Factory control value sent..");
+}
+
 String getNeededAction(){
     // old
     //http.begin("192.168.1.170:81/data");  //Specify request destination
@@ -223,8 +244,6 @@ String getNeededAction(){
     WiFiClient wc;
     
     String thermostatServerPath = "http://" + String(THERMOSTAT_IP) + "/result";
-    //String thermostatServerPath = "http://192.168.1.141:8083/result";
-    //String thermostatServerPath = "http://192.168.1.107/result";
     http.begin(wc, thermostatServerPath.c_str());  //Specify request destination
 
     int httpCode = http.GET();                                  //Send the request
@@ -277,18 +296,22 @@ int connectToWiFi(String ssid, String pw){
   }
 }
 
+String IpAddress2String(const IPAddress& ipAddress, byte section){
+    return String(ipAddress[section]);
+}
+
 int initWiFi(){
   
   if(connectToWiFi(ssid, password)){
     Serial.println("");
     Serial.println("Connected");
-    String ipMessage = "I" + WiFi.localIP().toString();
-    //Serial.println("SENT: " + ipMessage );
+    String ipMessage = "IP: " + IpAddress2String(WiFi.localIP(), 3);
+    Serial.println("SENT: " + ipMessage );
     
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
-    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
+    WiFi.hostname("IoT th " + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
   }else{
     Serial.println("");
     Serial.print("ERROR: Unable to connect to ");
@@ -319,6 +342,8 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   pinMode(RELAY_PIN, OUTPUT);
+  pinMode(POSITIVE_OUTPUT, OUTPUT);
+  digitalWrite(POSITIVE_OUTPUT, HIGH);
   
   turnHeating(OFF);
 
@@ -332,11 +357,23 @@ void setup() {
   EEPROM.begin(128);
   // EEPROM read methods can not be used before the first write method..
   //tempSet = loadFromEEPROM(eepromAddr);
-
+  /*
+  String thermostatIP = String(EEPROM.read(EEPROM_ADDR_IP1))  + "."
+                      + String(EEPROM.read(EEPROM_ADDR_IP2))  + "."
+                      + String(EEPROM.read(EEPROM_ADDR_IP3))  + "."
+                      + String(EEPROM.read(EEPROM_ADDR_IP4));
+  /**/
+  
   initWiFi();
 
+  //Serial.println("Loaded IP: |" + thermostatIP + "|");
+
+  //if(thermostatIP == "255.255.255.255")
+//    thermostatIP = String(THERMOSTAT_IP);
+  
+  
   Serial.println("\n");
-  Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION));
+  Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
   #ifdef USE_MOCK
     Serial.println("MOCK USED!");
   #endif
@@ -344,6 +381,7 @@ void setup() {
 
 
   server.on("/", HandleRoot);
+  server.on("/fc", HandleGetFactoryControlState);
   server.on("/data", HandleData);
   //server.on("/set", turnOutput);
   //server.on ("/save", handleSave);
@@ -394,15 +432,24 @@ void doOurTask(long now){
     
     lastCheck = now;
     elapsedTime = now;
-  
-    String res = getNeededAction();
+
+    String res = "";
+    #ifndef OVERRIDE_WITH_FACTORY_CONTROL
+     res = getNeededAction();
+    #else
+     res = readFactoryInput();
+    #endif
 
     if(res == NEEDED_ACTION_HEATING){
       turnHeating(ON);
-      action = 1;
+      action = HEATING;
     }else{
       turnHeating(OFF);
-      action = 0;
+      if(res == NEEDED_ACTION_NOTHING){
+        action = NOTHING;
+      }else{
+        action = UNDEFINED;
+      }
     }
     Serial.println("Action received: " + String(action));
 

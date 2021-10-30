@@ -1,7 +1,7 @@
 String getHTML(short heating, int rssi){
 
 	String heatingColor = "";
-	if(heating){
+	if(heating == HEATING){
 	  heatingColor = "#f24e21";
 	}else{
 	  heatingColor = "#737373";
@@ -55,15 +55,22 @@ String getHTML(short heating, int rssi){
 	pg += "</div>\n";
 	pg += "<div class='side-by-side text'>Heating</div>\n";
 	pg += "<div class='side-by-side reading'>\n";
-	if(heating == 0){
-		pg += "Passive\n";
-	}else{
+	if(heating == HEATING){
 		pg += "<b>Active</b>\n";
+	}else{
+    if(heating == NOTHING){
+      pg += "Passive\n";		
+    }else{
+      pg += "Undefined\n";
+    }
 	}
 	pg += "</div>\n";
 	pg += "</div>\n";
 	pg += "</div>\n";
 	pg += "<h2>RSSI: " + String(rssi) + "</h2>\n";
+  #ifdef OVERRIDE_WITH_FACTORY_CONTROL
+    pg +="<h1>Factory input used!</h1>\n";
+  #endif
 	#ifdef USE_MOCK
 		pg +="<h1>MOCK USED</h1>\n";
 		#ifdef THERMOSTAT_MOCK_IP

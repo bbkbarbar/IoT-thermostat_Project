@@ -22,6 +22,7 @@
  
 #define DHT11_PIN                         14 // 14 means D5 in NodeMCU board -> Pin for temperature and humidity sensor
 
+#define POSITIVE_OUTPUT                   D0  // 
 #define RELAY_PIN                         D2  // 2 means D4 in Wemos D1 Mini board
                                              // 5 means D1 in NodeMCU board
                                              // 17 means D4 in NodeMCU board
@@ -57,7 +58,8 @@
 
 #define NOTHING                            0
 #define HEATING                            1
+#define UNDEFINED                         -1
 
 #define NEEDED_ACTION_NOTHING            "0"
 #define NEEDED_ACTION_HEATING            "1"
-#define NEEDED_ACTION_UNKNOWN		   	 "?"
+#define NEEDED_ACTION_UNKNOWN		   	     "?"
