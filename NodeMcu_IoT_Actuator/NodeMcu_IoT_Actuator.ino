@@ -1,10 +1,9 @@
 // Used board setting:
 // WeMos D1 R1
 
-//#define OVERRIDE_WITH_FACTORY_CONTROL
 
 #define USE_SECRET  1
-#define USE_MOCK
+//#define USE_MOCK
 
 // 1 "TP-Link_BB"    
 // 2 "BB_Home2"  
@@ -15,7 +14,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v1.2"
-#define BUILDNUM                      16
+#define BUILDNUM                      18
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -71,7 +70,7 @@ WiFiClient client;
 
 short action = NOTHING; // can be NOTHING or HEATING
 
-short mode = MODE_FORWARDER;
+short workingMode = MODE_FORWARDER;
 
 //==================================
 // Other variables
@@ -227,7 +226,7 @@ void HandleNotRstEndpoint(){
 
 void HandleRoot(){
   String message = "";
-  message = getHTML(action, WiFi.RSSI(), mode);
+  message = getHTML(action, WiFi.RSSI(), workingMode);
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
@@ -245,17 +244,19 @@ void actionModeSet(){
   short wantedMode = value.toInt();
 
   if( (wantedMode == 1) || (wantedMode == 7)){
-    mode = MODE_ACTUATOR;
+    workingMode = MODE_ACTUATOR;
   }else{
-    mode = MODE_FORWARDER;
+    workingMode = MODE_FORWARDER;
   }
   
   // save into eeprom
-  EEPROM.write(EEPROM_ADDR_MODE, mode);
+  EEPROM.write(EEPROM_ADDR_MODE, workingMode);
   EEPROM.commit();
 
   
-  String m = "Mode set to: " + (mode==MODE_FORWARDER?String("FORWARDER"):String("Actuator")) + "<br><a href=http://" + WiFi.localIP().toString() + ">Main page</a>";
+  String m = "Mode set to: " + (workingMode==MODE_FORWARDER?String("FORWARDER"):String("Actuator")) + "<br><a href=http://" + WiFi.localIP().toString() + ">Main page</a>";
+  m += "<br><a href=\"javascript:history.back()\">Go back</a>";
+  
   server.send(200, "text/html", m );/**/
 }
 
@@ -377,9 +378,7 @@ void setup() {
 
   // EEPROM
   EEPROM.begin(128);
-  // EEPROM read methods can not be used before the first write method..
-  //tempSet = loadFromEEPROM(eepromAddr);
-  mode = loadFromEEPROM(EEPROM_ADDR_MODE);
+  workingMode = EEPROM.read(EEPROM_ADDR_MODE);
   /*
   String thermostatIP = String(EEPROM.read(EEPROM_ADDR_IP1))  + "."
                       + String(EEPROM.read(EEPROM_ADDR_IP2))  + "."
@@ -458,7 +457,7 @@ void doOurTask(long now){
     elapsedTime = now;
 
     String res = "";
-    if(mode == MODE_ACTUATOR){
+    if(workingMode == MODE_ACTUATOR){
       res = getNeededAction(); 
     }else{
      res = readFactoryInput();
