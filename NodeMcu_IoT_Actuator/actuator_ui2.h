@@ -1,4 +1,4 @@
-String getHTML(short heating){
+String getHTML(short heating, int rssi){
 
 	String heatingColor = "";
 	if(heating){
@@ -19,7 +19,7 @@ String getHTML(short heating){
 	pg += "body{margin: 0px;} \n";
 	
 	pg += "h1 {margin: 10px auto 10px;}\n";
-	pg += "h2 {margin: 50px auto 0px;}\n";
+	pg += "h2 {margin: 10px auto 0px;}\n";
 	pg += "h3 {margin: 0px auto 50px;}\n";
 
 	pg += ".side-by-side{display: table-cell;vertical-align: middle;position: relative;}\n";
@@ -37,6 +37,7 @@ String getHTML(short heating){
 	pg += "</style>\n";
 	pg += "</head>\n";
 	pg += "<body>\n";
+	pg += "<br>\n";
 	pg += "<h2>" + String(SOFTWARE_NAME) + "</h2>";
 	pg += "<h1>" + String(MODULE_NAME) + "</h1>";
 	pg += "<h3>" + String(VERSION) + "</h3>";
@@ -62,13 +63,14 @@ String getHTML(short heating){
 	pg += "</div>\n";
 	pg += "</div>\n";
 	pg += "</div>\n";
+	pg += "<h2>RSSI: " + String(rssi) + "</h2>\n";
 	#ifdef USE_MOCK
 		pg +="<h1>MOCK USED</h1>\n";
 		#ifdef THERMOSTAT_MOCK_IP
-			pg +="<h3>Mock thermostat ip:</h3>\n";
+			pg +="<h2>Mock thermostat ip:</h2>\n";
 			pg +="<h2>" + String(THERMOSTAT_MOCK_IP) + "</h2>\n";
 		#else
-			pg +="<h3>Mock thermostat ip UNDEFINED!</h3>\n";
+			pg +="<h2>Mock thermostat ip UNDEFINED!</h2>\n";
 		#endif
 	#endif
 	

@@ -14,8 +14,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v0.2"
-#define BUILDNUM                      11
+#define VERSION                   "v0.3"
+#define BUILDNUM                      12
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -208,7 +208,7 @@ void HandleNotRstEndpoint(){
 
 void HandleRoot(){
   String message = "";
-  message = getHTML(action);
+  message = getHTML(action, WiFi.RSSI());
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
