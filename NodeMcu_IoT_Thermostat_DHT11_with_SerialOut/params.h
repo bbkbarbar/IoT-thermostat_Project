@@ -1,10 +1,11 @@
 
 #define SOFTWARE_NAME  "IoT thermostat"
 #define TITLE          "IoT TH sensor"
+#define SHORT_NAME     "Thermostat"
 #define MODULE_NAME    "UI"
 
 #define LOCATION_NAME  "Nappali"
-#define IOT_DEVICE_ID   4
+#define IOT_DEVICE_ID   2
 
 #define PHASE_CHECKER_IP  "192.168.1.170"
 
@@ -62,3 +63,10 @@
 
 #define NOTHING                            0
 #define HEATING                            1
+
+#define DISPLAY_NOT_HEATING              "_"
+#define DISPLAY_HEATING                  "F"
+
+#define FC_STATUS_NOTHING             "0"
+#define FC_STATUS_HEATING             "1"
+#define FC_STATUS_UNKNOWN             "?"

@@ -18,10 +18,10 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v2.6"
-#define BUILDNUM                      35
+#define VERSION                   "v2.7"
+#define BUILDNUM                      37
 /*
- * 
+ * Add device_name tag for RSSI
  */
 
 #define SERIAL_BOUND_RATE         115200
@@ -370,6 +370,40 @@ String getCurrentPhaseState(int retryCount){
 }
 
 
+String getFactoryControlState(int retryCount){
+     WiFiClient myWC;
+    // old
+    //http.begin("192.168.1.170:81/data");  //Specify request destination
+    // new
+    String statusServerPath = String(ACTUATOR_URL) + "/fc";
+    http.begin(myWC, statusServerPath.c_str());  //Specify request destination
+
+
+    int httpCode = http.GET();                                  //Send the request
+    //Serial.print("PhaseStatus - resultCode: " + String(httpCode) + " ps: ");
+    
+    String payload = "";
+    if (httpCode > 0) { //Check the returning code
+      payload = http.getString();   //Get the request response payload
+      //Serial.print(payload);
+      //Serial.println(payload);             //Print the response payload
+    }else{
+      payload = String(FC_STATUS_UNKNOWN);
+      Serial.println("httpCode: " + String(httpCode));
+    }
+    http.end();   //Close connection
+
+    Serial.println("FactoryState: " + payload);
+
+    if( (retryCount > 0) && (payload == String(FC_STATUS_UNKNOWN)) ){
+      // probably need to retry
+      return getFactoryControlState(--retryCount);
+    }else{
+      return payload;
+    }
+}
+
+
 #ifdef DEBUG_MODE
 void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh , String heating){
      //Declare an object of class HTTPClient
@@ -391,7 +425,7 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
 #endif
 
 
-void sendDataToKaaIoT(short retryCount, String ps, float temperature , float humidity, float tempSet , float overheating , String heating){
+void sendDataToKaaIoT(short retryCount, String ps, float temperature , float humidity, float tempSet , float overheating , String heating, short fc){
 
     String phaseStatusToSend = "";
     if(ps == "1"){
@@ -416,9 +450,10 @@ void sendDataToKaaIoT(short retryCount, String ps, float temperature , float hum
     postData += "\t\"calculatedTarget\": " + String(ct) + ",\n";
     postData += "\t\"humidity\": "    + String(humidity) + ",\n";
     postData += "\t\"overheating\": " + String(overheating) + ",\n";
+    postData += "\t\"factoryControlState\": " + String(fc) + ",\n";
 
     // NOT IMPORTANT
-    postData += "\t\"RSSI\": " + String(WiFi.RSSI()) + ",\n";
+    postData += "\t\"RSSI-" + String(SHORT_NAME) + "\": " + String(WiFi.RSSI()) + ",\n";
     
     postData += "\t\"phaseStatus\": " + phaseStatusToSend + ",\n";
     postData += "\t\"heating\": "     + heatingToSend + "\n";
@@ -446,7 +481,7 @@ void sendDataToKaaIoT(short retryCount, String ps, float temperature , float hum
 
     // TODO check http code if needed
     if( (httpCode != 200) && (retryCount > 0) ){
-      sendDataToKaaIoT( (retryCount-1), ps, temperature, humidity, tempSet, overheating, heating);
+      sendDataToKaaIoT( (retryCount-1), ps, temperature, humidity, tempSet, overheating, heating, fc);
     }
 
 }
@@ -680,7 +715,7 @@ String getDisplayContent(String phaseStatusStr, int tempInt, int humidityInt, in
     line += tempStr + "C";
     line += setStr + "C";
     // "heating?" part
-    line += heatingAction;
+    line += (heatingAction==1?String(DISPLAY_HEATING):String(DISPLAY_NOT_HEATING));
   
     #ifdef SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
       Serial.println("\"" + line + "\"");
@@ -730,6 +765,16 @@ void sensorLoop(long now){
     Serial.print("\t");
     Serial.println(String(WiFi.RSSI()));
 
+    String fc = getFactoryControlState(1);
+    short fcVal = 5;
+    if(fc == String(FC_STATUS_HEATING)){
+      fcVal = 9;
+    }else if(fc == String(FC_STATUS_NOTHING)){
+      fcVal = 0;
+    }else{
+      fcVal = 5;
+    }
+
     decide();
 
     timeOfLastMeasurement = now;
@@ -743,7 +788,7 @@ void sensorLoop(long now){
     if(updateCounter == 1){
       #ifndef SKIP_KAAIOT_SEND
       
-        sendDataToKaaIoT(KAAIOT_RETRY_COUNT, lastPhaseStatus, valC, humidity, ts, oh, String(action));
+        sendDataToKaaIoT(KAAIOT_RETRY_COUNT, lastPhaseStatus, valC, humidity, ts, oh, String(action), fcVal);
         
       #endif
     }
