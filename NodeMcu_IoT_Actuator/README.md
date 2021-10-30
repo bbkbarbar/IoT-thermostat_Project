@@ -10,11 +10,12 @@ Circuit:
 Required libraries:
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
- Endpoint:
+ Endpoints:
   - / => Information page
   - /set => set mode (forwarder or actuator)
     - /set?mode=0  means "forwarder mode"
     - /set?mode=1  >> means "actuator mode"
+  - /fc => factory thermostat's control state
 
 Versions:
  - v0.1: basic functions
