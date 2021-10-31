@@ -61,7 +61,10 @@ String getHTML(short heating, int rssi, short mode){
   pg += "<div class='side-by-side reading'>\n";
   if(mode == MODE_FORWARDER){
     pg += "Factory";
-  }else{
+  }else if(mode == MODE_ROLLBACK){
+    pg += "Rollback";
+  }else
+  {
     pg += "Custom";
   }
   pg += "</div>\n";

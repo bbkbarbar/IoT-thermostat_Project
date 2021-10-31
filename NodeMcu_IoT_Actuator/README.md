@@ -38,6 +38,10 @@ Versions:
      - WebUI changes (RSSI moved to "table")
      - Minor refactors
      - /set endpoint drop back to main page after few seconds
+ - v1.4:
+     - Rollback function:
+       <br>If "Custom mode" used AND actuator can not get HTTP-200 -response from Thermostat device (for any reason)
+       <br>than it automatically goes to "Rollback mode" and uses factory control state
 
 
  TODO list:

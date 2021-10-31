@@ -65,4 +65,6 @@
 #define NEEDED_ACTION_UNKNOWN		   	     "?"
 
 #define MODE_FORWARDER                     0
-#define MODE_ACTUATOR                      7
+#define MODE_ACTUATOR                      1
+#define MODE_ACTUATOR2                     7
+#define MODE_ROLLBACK                      3

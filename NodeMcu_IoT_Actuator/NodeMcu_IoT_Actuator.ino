@@ -13,8 +13,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v1.3"
-#define BUILDNUM                      19
+#define VERSION                   "v1.4"
+#define BUILDNUM                      20
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -72,6 +72,7 @@ WiFiClient client;
 short action = NOTHING; // can be NOTHING or HEATING
 
 short modeSet = MODE_FORWARDER;
+short modeToShow = modeSet;
 
 //==================================
 // Other variables
@@ -189,7 +190,7 @@ void HandleNotRstEndpoint(){
 
 void HandleRoot(){
   String message = "";
-  message = getHTML(action, WiFi.RSSI(), modeSet);
+  message = getHTML(action, WiFi.RSSI(), modeToShow);
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
@@ -236,7 +237,7 @@ String getNeededAction(){
     
     String payload = "";
     Serial.println("httpCode: " + String(httpCode));
-    if (httpCode != 0) { //Check the returning code
+    if (httpCode == 200) { //Check the returning code
       payload = http.getString();   //Get the request response payload
     }else{
       payload = String(NEEDED_ACTION_UNKNOWN);
@@ -415,24 +416,31 @@ void doOurTask(long now){
     elapsedTime = now;
 
     String res = "";
-    if(modeSet == MODE_ACTUATOR){
-      res = getNeededAction(); 
-    }else{
-     res = readFactoryInput();
-    }
 
-    if(res == NEEDED_ACTION_HEATING){
-      turnHeating(ON);
-      action = HEATING;
+    if(modeSet == MODE_FORWARDER){
+      res = readFactoryInput();
+      modeToShow = MODE_FORWARDER;
     }else{
-      turnHeating(OFF);
-      if(res == NEEDED_ACTION_NOTHING){
-        action = NOTHING;
+      if( (modeSet == MODE_ACTUATOR) || (modeSet == MODE_ACTUATOR2) ){
+        res = getNeededAction(); 
+      } 
+      if(res == String(NEEDED_ACTION_UNKNOWN)){
+        modeToShow = MODE_ROLLBACK;
+        res = readFactoryInput();
       }else{
-        action = UNDEFINED;
+        modeToShow = MODE_ACTUATOR;
       }
     }
-    Serial.println("Action received: " + String(action));
+    
+
+    if( res == NEEDED_ACTION_HEATING){
+      action = HEATING;  
+      turnHeating(ON);
+    }else{
+      turnHeating(OFF);
+      action = NOTHING;
+    }
+    Serial.println("Action to do: " + String(action));
 
 
     /*
