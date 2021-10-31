@@ -8,20 +8,20 @@ It also has capability of different custom-interfaces (e.g.: show values on smar
 
 ### Modules:
  - Thermostat
-  - Measures inside temperature and humidity
-  - get price information from "PhaseChecker"-device
-  - Provide command to the "actuator" module (receiver) to control building's heater device
-  - Shows informations on OLED display:
-    - Current temperature
-    - Set temperature
-    - Humidity value (rh)
-    - Current "price"
-    - Current decision (heating or not)
+   - Measures inside temperature and humidity
+   - get price information from "PhaseChecker"-device
+   - Provide command to the "actuator" module (receiver) to control building's heater device
+   - Shows informations on OLED display:
+     - Current temperature
+     - Set temperature
+     - Humidity value (rh)
+     - Current "price"
+     - Current decision (heating or not)
 
  - Actuator / Receiver:
-   - Can get action from thermostat module ("Custom mode")
-   - Can get action from factory thermostat receiver ("factory mode")
-   - Observe control state of factory thermostat receiver
+    - Can get action from thermostat module ("Custom mode")
+    - Can get action from factory thermostat receiver ("factory mode")
+    - Observe control state of factory thermostat receiver
 
  - PhaseChecker device:
     - Provide current status of "low-priced" energy source (currently available or not)
