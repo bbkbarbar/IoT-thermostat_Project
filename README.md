@@ -19,26 +19,26 @@ It also has capability of different custom-interfaces (e.g.: show values on smar
     - Current decision (heating or not)
 
  - Actuator / Receiver:
-  - Can get action from thermostat module ("Custom mode")
-  - Can get action from factory thermostat receiver ("factory mode")
-  - Observe control state of factory thermostat receiver
+   - Can get action from thermostat module ("Custom mode")
+   - Can get action from factory thermostat receiver ("factory mode")
+   - Observe control state of factory thermostat receiver
 
  - PhaseChecker device:
-   - Provide current status of "low-priced" energy source (currently available or not)
+    - Provide current status of "low-priced" energy source (currently available or not)
 
 #### Required libraries:
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
 #### Hardware requirement:
 - Thermostat
- - NodeMCU board (or WeMos D1 mini also applicable)
- - DHT11 temperature and humidity sensor (DHT22 also applicable)
- - Arduino Nano (other arduino version can also be used)
- - OLED display (0.96" with SPI interface)
+  - NodeMCU board (or WeMos D1 mini also applicable)
+  - DHT11 temperature and humidity sensor (DHT22 also applicable)
+  - Arduino Nano (other arduino version can also be used)
+  - OLED display (0.96" with SPI interface)
 
 - Actuator
- - WeMos D1 mini board (NodeMCU also applicable)
- - Relay module (1ch, low level triggered version)
- - NPN transistor and resistors for control relay-module
+  - WeMos D1 mini board (NodeMCU also applicable)
+  - Relay module (1ch, low level triggered version)
+  - NPN transistor and resistors for control relay-module
 
 ToDo list:
