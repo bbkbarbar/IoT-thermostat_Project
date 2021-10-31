@@ -42,11 +42,13 @@ Versions:
      - Rollback function:
        <br>If "Custom mode" used AND actuator can not get HTTP-200 -response from Thermostat device (for any reason)
        <br>than it automatically goes to "Rollback mode" and uses factory control state
+     - v1.4.1:
+       <br>In "Rollback mode" WebUI show the thermostat-IP
 
 
  TODO list:
-  - Add "Rollback" -mode: <br>
-    Use "factory" input if thermostat not available for any reaseon
+  - ~~Add "Rollback" -mode: <br>
+    Use "factory" input if thermostat not available for any reaseon~~
   - Consider create set..-endpoint for thermostat IP
   - ~~Figure out WeMos board's pin configuration~~
   - ~~create functions for reading ADC <br>

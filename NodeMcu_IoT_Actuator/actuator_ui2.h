@@ -118,6 +118,12 @@ String getHTML(short heating, int rssi, short mode){
   
  
 	//pg += "<h2>RSSI: " + String(rssi) + "</h2>\n";
+
+  if(mode == MODE_ROLLBACK){
+    pg +="<h2>Thermostat ip:</h2>\n";
+    pg +="<h2>" + String(THERMOSTAT_IP) + "</h2>\n";
+  }
+  
 	#ifdef USE_MOCK
 		pg +="<h1>MOCK USED</h1>\n";
 		#ifdef THERMOSTAT_MOCK_IP

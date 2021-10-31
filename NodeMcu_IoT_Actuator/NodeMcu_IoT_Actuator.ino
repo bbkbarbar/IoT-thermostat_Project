@@ -13,8 +13,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v1.4"
-#define BUILDNUM                      20
+#define VERSION                 "v1.4.1"
+#define BUILDNUM                      21
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
