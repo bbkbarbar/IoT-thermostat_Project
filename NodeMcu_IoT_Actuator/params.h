@@ -1,7 +1,7 @@
 
 #define SOFTWARE_NAME  "IoT thermostat"
 #define TITLE          "IoT TH actuator"
-#define MODULE_NAME    "Actuator"
+#define MODULE_NAME    "Receiver"
 
 #define LOCATION_NAME  "Futes"
 #define IOT_DEVICE_ID   3

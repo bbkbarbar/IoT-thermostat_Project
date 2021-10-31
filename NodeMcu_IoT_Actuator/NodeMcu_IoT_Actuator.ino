@@ -13,8 +13,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v1.2"
-#define BUILDNUM                      18
+#define VERSION                   "v1.3"
+#define BUILDNUM                      19
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -32,6 +32,7 @@
 #include "params.h"
 
 #include "actuator_ui2.h"
+#include "common_methods.h"
 
 
 //==================================
@@ -70,7 +71,7 @@ WiFiClient client;
 
 short action = NOTHING; // can be NOTHING or HEATING
 
-short workingMode = MODE_FORWARDER;
+short modeSet = MODE_FORWARDER;
 
 //==================================
 // Other variables
@@ -112,30 +113,6 @@ void doRestart(){
 }
 
 
-void saveToEEPROM(int addr, short value){
-
-  byte b1 = value & 0b11111111;
-  byte b2 = (value>>8) & 0b11111111;
-
-  Serial.println("Value: " + String(value));
-  Serial.println("b1: " + String(b1));
-  Serial.println("b2: " + String(b2));
-  
-  EEPROM.write(addr, b1);
-  EEPROM.write(addr+1, b2);
-  EEPROM.commit();
-}
-
-short loadFromEEPROM(int addr){
-  byte b1 = EEPROM.read(addr);
-  byte b2 = EEPROM.read(addr+1);
-
-  short value = 0;
-  value |= (b2<<8);
-  value |= b1;
-  return value;
-}
-
 
 // ==========================================================================================================================
 //                                                  Web server functions
@@ -158,21 +135,6 @@ void HandleNotFound(){
 }
 
 /*
-void turnOutput(){
-  String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
-  int v = value.toInt();
-  if(v == 1){
-    digitalWrite(RELAY_PIN, HIGH);
-    Serial.println("Out: high");
-  }else{
-    digitalWrite(RELAY_PIN, LOW);
-    Serial.println("Out: low");
-  }
-  String m = String("Value received:\n") + String(v);
-  server.send(200, "text/html", m );
-}
-/**/
-
 byte sendDataToKaaIoT(short retryCount, short heating){
 
     String heatingToSend = "";
@@ -218,6 +180,7 @@ byte sendDataToKaaIoT(short retryCount, short heating){
 
     return ((httpCode == 200)?1:0);
 }
+/**/
 
 
 void HandleNotRstEndpoint(){
@@ -226,7 +189,7 @@ void HandleNotRstEndpoint(){
 
 void HandleRoot(){
   String message = "";
-  message = getHTML(action, WiFi.RSSI(), workingMode);
+  message = getHTML(action, WiFi.RSSI(), modeSet);
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
@@ -244,18 +207,18 @@ void actionModeSet(){
   short wantedMode = value.toInt();
 
   if( (wantedMode == 1) || (wantedMode == 7)){
-    workingMode = MODE_ACTUATOR;
+    modeSet = MODE_ACTUATOR;
   }else{
-    workingMode = MODE_FORWARDER;
+    modeSet = MODE_FORWARDER;
   }
   
   // save into eeprom
-  EEPROM.write(EEPROM_ADDR_MODE, workingMode);
+  EEPROM.write(EEPROM_ADDR_MODE, modeSet);
   EEPROM.commit();
 
   
-  String m = "Mode set to: " + (workingMode==MODE_FORWARDER?String("FORWARDER"):String("Actuator")) + "<br><a href=http://" + WiFi.localIP().toString() + ">Main page</a>";
-  m += "<br><a href=\"javascript:history.back()\">Go back</a>";
+  String m = "Mode set to: " + (modeSet==MODE_FORWARDER?String("FORWARDER"):String("Actuator"));
+  m += getHTMLAutomaticGoBack(3000);
   
   server.send(200, "text/html", m );/**/
 }
@@ -319,17 +282,12 @@ int connectToWiFi(String ssid, String pw){
   }
 }
 
-String IpAddress2String(const IPAddress& ipAddress, byte section){
-    return String(ipAddress[section]);
-}
 
 int initWiFi(){
   
   if(connectToWiFi(ssid, password)){
     Serial.println("");
     Serial.println("Connected");
-    String ipMessage = "IP: " + IpAddress2String(WiFi.localIP(), 3);
-    Serial.println("SENT: " + ipMessage );
     
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
@@ -378,7 +336,7 @@ void setup() {
 
   // EEPROM
   EEPROM.begin(128);
-  workingMode = EEPROM.read(EEPROM_ADDR_MODE);
+  modeSet = EEPROM.read(EEPROM_ADDR_MODE);
   /*
   String thermostatIP = String(EEPROM.read(EEPROM_ADDR_IP1))  + "."
                       + String(EEPROM.read(EEPROM_ADDR_IP2))  + "."
@@ -395,7 +353,7 @@ void setup() {
   
   
   Serial.println("\n");
-  Serial.println(String(SOFTWARE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
+  Serial.println(String(SOFTWARE_NAME) + " "  + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
   #ifdef USE_MOCK
     Serial.println("MOCK USED!");
   #endif
@@ -457,7 +415,7 @@ void doOurTask(long now){
     elapsedTime = now;
 
     String res = "";
-    if(workingMode == MODE_ACTUATOR){
+    if(modeSet == MODE_ACTUATOR){
       res = getNeededAction(); 
     }else{
      res = readFactoryInput();

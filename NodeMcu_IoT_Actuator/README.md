@@ -33,12 +33,19 @@ Versions:
  - v1.2:
      - /set endpoint added. <br>
      Mode can be set over it
+ - v1.3:
+     - Rename "Actuator" >> "Receiver"
+     - WebUI changes (RSSI moved to "table")
+     - Minor refactors
+     - /set endpoint drop back to main page after few seconds
 
 
  TODO list:
-  - Create set..-endpoint for thermostat IP
+  - Add "Rollback" -mode: <br>
+    Use "factory" input if thermostat not available for any reaseon
+  - Consider create set..-endpoint for thermostat IP
   - ~~Figure out WeMos board's pin configuration~~
   - ~~create functions for reading ADC <br>
     for observe heating phases of factory thermostat~~
   - ~~Create circuite for "observe-function"~~
-  - create methods for KaaIoT data upload (for observe function)
+  - ~~create methods for KaaIoT data upload (for observe function)~~ - Solved since Thermostat module reads observed data from Receiver module
