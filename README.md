@@ -1,5 +1,8 @@
 # IoT Thermostat v2.7
 
+Custom made thermostat for building's heating control with capability of timing heat-phases when energy price is discounted.
+It also has capability of different custom-interfaces (e.g.: show values on smart-mirror, etc.)
+
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
 
