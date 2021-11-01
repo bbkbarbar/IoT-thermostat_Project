@@ -1,4 +1,4 @@
-# IoT Thermostat v2.7
+# IoT Thermostat v2.8
 
 Custom made thermostat for building's heating control with capability of timing heat-phases when energy price is discounted.
 It also has capability of different custom-interfaces (e.g.: show values on smart-mirror, etc.)
@@ -7,7 +7,7 @@ It also has capability of different custom-interfaces (e.g.: show values on smar
 
 
 ### Modules:
- - Thermostat
+ - #### [Thermostat](https://github.com/bbkbarbar/IoT-thermostat_Project/tree/main/NodeMcu_IoT_Thermostat_DHT11_with_SerialOut)
    - Measures inside temperature and humidity
    - get price information from "PhaseChecker"-device
    - Provide command to the "actuator" module (receiver) to control building's heater device
@@ -18,12 +18,12 @@ It also has capability of different custom-interfaces (e.g.: show values on smar
      - Current "price"
      - Current decision (heating or not)
 
- - Actuator / Receiver:
+ - #### [Actuator / Receiver](https://github.com/bbkbarbar/IoT-thermostat_Project/tree/main/NodeMcu_IoT_Actuator)
     - Can get action from thermostat module ("Custom mode")
     - Can get action from factory thermostat receiver ("factory mode")
     - Observe control state of factory thermostat receiver
 
- - PhaseChecker device:
+ - #### PhaseChecker device:
     - Provide current status of "low-priced" energy source (currently available or not)
 
 #### Required libraries:
@@ -40,5 +40,3 @@ It also has capability of different custom-interfaces (e.g.: show values on smar
   - WeMos D1 mini board (NodeMCU also applicable)
   - Relay module (1ch, low level triggered version)
   - NPN transistor and resistors for control relay-module
-
-ToDo list:
