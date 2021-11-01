@@ -6,6 +6,8 @@
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
 ### Version notes:
+- 2.8:
+   - Using average of last measured temperature values
 - 2.7:
    - Add fuction to check factory control state over actuator device <br>
      and publish this information to KaaIoT
@@ -24,15 +26,14 @@
 
 
 ### TODO list:
-   - ~~Use "automatic go-back" -function in /set endpoints~~
-   - Create average value calculation(s) for KaaIoT update
    - Use "isnan()" -function
-   - ~~Create recursive function for getCurrentPhaseState() with retryCount~~✓
-   - ~~Create new webUI page (based on sample2.html)~~✓
-   - ~~Implement color changes in heating's line in webUI 2~~ ✓
    - Store elapsed time since last KaaIoT update sent <br>
      for using during average calculations
-
+   - ~~Use average of last measured temperature values~~ ✓
+   - ~~Use "automatic go-back" -function in /set endpoints~~ ✓
+   - ~~Create recursive function for getCurrentPhaseState() with retryCount~~ ✓
+   - ~~Create new webUI page (based on sample2.html)~~✓
+   - ~~Implement color changes in heating's line in webUI 2~~ ✓
    - ~~Data logging on local mock server should works fine~~ ✓
    - tempSet can not be restored properly from EEPROM if it's last value > 255
       (overflow occures)
