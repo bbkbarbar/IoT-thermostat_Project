@@ -23,6 +23,7 @@ Version notes:
 
 
 TODO list:
+   - Use "automatic go-back" -function in /set endpoints
    - Create average value calculation(s) for KaaIoT update
    - Use "isnan()" -function
    - ~~Create recursive function for getCurrentPhaseState() with retryCount~~✓
@@ -54,8 +55,12 @@ Endpoints:
    - heating (1|0)
 - /data => show basic sensor values
 - /data2 => show extended sensor values (+ phaseStatus)
-- /set => set needed temperature
- "/set?value=235" (means 23,5°C)
-- /overheat => set overheating temperature difference
- "/overheat?value=5" (means 0,5°C)
 - /rst => reboot device insantly
+- /set => Set parameters:<br>
+  - "/set?temp=235" or "/set?temperature=235" means target temperature = 23,5°C
+  - "/set?diff=4" or "/set?overheat=4" means overheating difference = 0,4°C<br>
+- Depricated endpoints:
+  - /temp => set needed temperature<br>
+   "/set?value=235" (means 23,5°C)
+  - /overheat => set overheating temperature difference
+   "/overheat?value=5" (means 0,5°C)

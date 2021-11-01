@@ -46,6 +46,14 @@
 
 #define DELAY_BETWEEN_WIFI_CONNECTION_STATUS_CHECKS_IN_MS 20000
 
+#define DELAY_BEFORE_REFRESH_PAGE_AFTER_SET_ENDPOINT_IN_MS 3000
+
+// /set endpoint's arguments:
+#define ARG_TEMP_SET1 "temp"
+#define ARG_TEMP_SET2 "temperature"
+#define ARG_OVERHEAT1 "overheat"
+#define ARG_OVERHEAT2 "diff"
+
 // problem handling
 #define ERROR_COUNT_BEFORE_RESTART         3
 

@@ -19,7 +19,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                   "v2.7"
-#define BUILDNUM                      37
+#define BUILDNUM                      38
 /*
  * Add device_name tag for RSSI
  */
@@ -47,6 +47,7 @@
 #include "secrets.h"
 #include "params.h"
 
+#include "common_methods.h"
 #include "webUI2.h"
 
 DHTesp dht;
@@ -206,6 +207,7 @@ void actionTempSet(){
   float ts = (float)tempSet/10;
   Serial.println("Try to SET: " + String(tempSet) );
   String m = String("Target temperature value set:\n") + String(ts) + "C";
+  m+= getHTMLAutomaticGoBack(DELAY_BEFORE_REFRESH_PAGE_AFTER_SET_ENDPOINT_IN_MS);
 
   //To force quick reaction of set comand
   timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
@@ -223,9 +225,50 @@ void actionOverheatSet(){
   float oh = (float)overheatingDifference/10;
   Serial.println("Try to set overheating: " + String(overheatingDifference) );
   String m = String("Overheating value set: ") + String(oh)  + "C";
+  m+= getHTMLAutomaticGoBack(DELAY_BEFORE_REFRESH_PAGE_AFTER_SET_ENDPOINT_IN_MS);
 
   //To force quick reaction of set comand
   timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+  server.send(200, "text/html", m );
+}
+
+
+void actionSet(){
+  String m = "";
+  for (uint8_t i=0; i<server.args(); i++){
+    if( (server.argName(i) == String(ARG_TEMP_SET1)) || (server.argName(i) == String(ARG_TEMP_SET2)) ){
+        // TEMP_SET
+        String value = server.arg(i);
+        tempSet = value.toInt();
+
+        // save into eeprom
+        saveToEEPROM(eepromAddr, tempSet);
+
+        Serial.println("Try to SET: " + String(tempSet) );
+        float ts = (float)tempSet/10;
+        m += String("<br>Target temperature value set:\n") + String(ts) + "C\n<br>";
+
+        //To force quick reaction of set comand
+        timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+    }
+    if( (server.argName(i) == String(ARG_OVERHEAT1)) || (server.argName(i) == String(ARG_OVERHEAT2)) ){
+        // OVERHEAT
+        String value = server.arg(i);
+        overheatingDifference = value.toInt();
+
+        // save into eeprom
+        saveToEEPROM(eepromAddr2, overheatingDifference);
+
+        Serial.println("Try to set overheating: " + String(overheatingDifference) );
+        float oh = (float)overheatingDifference/10;
+        m += String("Overheating value set: ") + String(oh)  + "C\n<br>";
+
+        //To force quick reaction of set comand
+        timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+    }
+  }
+  
+  m+= getHTMLAutomaticGoBack(DELAY_BEFORE_REFRESH_PAGE_AFTER_SET_ENDPOINT_IN_MS);
   server.send(200, "text/html", m );
 }
 
@@ -656,7 +699,8 @@ void setup() {
   //server.on ("/save", handleSave);
   server.on("/pure", showPureValues);
   server.on("/rst", HandleNotRstEndpoint);
-  server.on("/set", actionTempSet);
+  server.on("/set", actionSet);
+  server.on("/temp", actionTempSet);
   server.on("/overheat", actionOverheatSet);
   server.onNotFound( HandleNotFound );
   server.begin();
