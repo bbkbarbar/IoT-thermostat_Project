@@ -2,14 +2,15 @@
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
-Required libraries:
+#### Required libraries:
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
-Version notes:
+### Version notes:
 - 2.7:
    - Add fuction to check factory control state over actuator device <br>
      and publish this information to KaaIoT
    - Change heeting-feedback from 1/0 to F/_
+   - Create common /set endpoint for parameters
 - 2.6:
    - Add hostname to WiFi client ✓
    - Send data to KaaIoT ✓ (b32)
@@ -22,8 +23,8 @@ Version notes:
 
 
 
-TODO list:
-   - Use "automatic go-back" -function in /set endpoints
+### TODO list:
+   - ~~Use "automatic go-back" -function in /set endpoints~~
    - Create average value calculation(s) for KaaIoT update
    - Use "isnan()" -function
    - ~~Create recursive function for getCurrentPhaseState() with retryCount~~✓
@@ -37,7 +38,7 @@ TODO list:
       (overflow occures)
     Tried to store in 2 places and concatenate.. now working yet.
 
-Endpoints:
+### Endpoints:
 - /result => for checking wanted status by actuator
 - /pure => return a JSON object what contains all available data:
    - IoT device id (int)
