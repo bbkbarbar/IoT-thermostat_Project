@@ -18,8 +18,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v2.7"
-#define BUILDNUM                      38
+#define VERSION                   "v2.8.1"
+#define BUILDNUM                      41
 /*
  * Add device_name tag for RSSI
  */
@@ -93,6 +93,12 @@ float valF = NAN;
 float valH = NAN;
 float valT = NAN;
 
+#define AVG_ARR_SIZE 5
+short dataCount = 0;
+short nextDataIdx = 0;
+float tempDataArr[AVG_ARR_SIZE];
+
+
 short tempSet = 150; // means 15,0 °C
 short overheatingDifference = 0;
 
@@ -111,6 +117,61 @@ long lastWiFiCheck = 0;
 int errorCount = 0;
 
 unsigned long elapsedTime = 0;
+
+
+float getTemperatureAvgValue(float lastVal){
+
+  // store last value
+  tempDataArr[nextDataIdx] = lastVal; 
+  
+  //move "pointer" of next overrideable array element
+  nextDataIdx++;
+  if(nextDataIdx >= AVG_ARR_SIZE){
+    nextDataIdx = 0;
+  }
+  
+
+  float res = 0.0;
+  
+  if(dataCount < AVG_ARR_SIZE){ // we have no enaugh data for calculation2, so we will calculate a basic average of already available values..
+    dataCount++;
+    for (uint8_t i=0; i<dataCount; i++){
+      res += tempDataArr[i];
+    }
+    return (res / dataCount);
+  
+  }else{ // we have full array of data
+
+    byte idxMin = 0;
+    byte idxMax = 0;
+    float minV = tempDataArr[idxMin];
+    float maxV = tempDataArr[idxMax];
+    for (uint8_t i=1; i<dataCount; i++){
+      if(tempDataArr[i] < tempDataArr[idxMin]){
+        idxMin = i;
+      }
+      if(tempDataArr[i] > tempDataArr[idxMax]){
+        idxMax = i;
+      }
+    }
+
+    if(idxMin == idxMax){ // means all element of array is the same value
+      // than return with any element of array e.g.: idx0
+      return tempDataArr[0];
+    }
+
+    // if we reached this line of code than we have an array with different min and max values..
+    for (uint8_t i=0; i<AVG_ARR_SIZE; i++){
+      // we will get a total value of array elements except the min and max value
+      if((i != idxMin) && (i != idxMax)){
+        res += tempDataArr[i];  
+      }
+    }
+    return (res / (AVG_ARR_SIZE-2));
+    
+  }
+
+}
 
 
 // ==========================================================================================================================
@@ -278,88 +339,7 @@ void HandleNotRstEndpoint(){
   doRestart();
 }
 
-/*
-String generateHtmlHeader(){
-  String h = "<!DOCTYPE html>";
-  h += "<html lang=\"en\">";
-  h += "\n\t<head>";
-  h += "\n\t\t<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">";
-  h += "\n\t</head>";
-  return h;
-}
 
-String generateHtmlBody(){
-  String m = "\t<body bgcolor=\"#49B7E8\">";
-
-  m += "\t\t<h4>";
-  m += String(SOFTWARE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM) ;
-  m += "<br>" + String(LOCATION_NAME);
-  m += "</h4><br>";
-
-  m += "\n\t<center>\n";
-
-  // HOERZET
-  m += "\t\t<h1>";
-  m += "H&otilde;&eacute;rzet:\n\r\t\t</h1><h1>";
-  m += String(valT);
-  m += " &#8451;</h1>\n\r";
-
-  // MERT (ES KORRIGALT) HOMERSEKLET
-  m+= "\t\t<h3>(" + String(valC) + " &#8451;)</h3>";
-
-  // BEALLITOTT ERTEK
-  m+= "\n\n\t\t<h1>Be&aacute;ll&iacute;tott:</h1>\n";
-  m+= "\t\t</h2><h1>" + String(((float)tempSet)/10) + " &#8451;</h1>";
-  //m += "<br>";
-
-  // ENERGIA FORRAS VISSZAJELZESE
-  String energySource = "";
-  if(lastPhaseStatus == String(PHASE_STATUS_CHEAP)){
-    energySource = "&darr; &dollar; &darr;";
-  }else 
-  if(lastPhaseStatus == String(PHASE_STATUS_EXPENSIVE)){
-    energySource = "&dollar; &dollar; &dollar;";
-  }else{
-    energySource = "? &dollar; ?";
-  }
-
-  m += "\n\t\t<h2>" + energySource + "</h2>\n\n";
-
-
-  // FŰTÉS visszajelzése
-  if(action == HEATING){
-    m += "\t\t<h1>F&Udblac;T&Edot;S</h1>";
-  }else{
-    m += "\t\t<br>";
-  }
-  
-  // PARATARTALOM
-  m += "\n\n\t\t<br><h2>";
-  m += "P&aacute;ratartalom:\n\r\t\t</h2><h1>";
-  m += String((int)valH);
-  m += " %</h1><br>\n";
-
-  //m += generateHtmlSaveValuePart();
-
-  m += "\n\t</center>";
-
-  m += "\n<br>ErrorCount: " + String(errorCount);
-  
-  #ifndef SKIP_TS_COMMUNICATION
-  m += "\n\n<br>Last update status: " + (lastTSUpdateStatus==200?"OK":String(lastTSUpdateStatus));
-  #endif
-  
-  m += "\n<br>Elasped time: " + String(elapsedTime);
-  
-
-  m += "<br><a href=\"http://www.idokep.hu/\" target=\"_blank\" title=\"Idojaras\"><img src=\"//www.idokep.hu/terkep/hu_mini/s_anim.gif\"></a>";
-  
-  m += "\t</body>\r\n";
-  m += "</html>";
-  
-  return m;
-}
-/**/
 
 void HandleRoot(){
   //Serial.println("HandleRoot called...");
@@ -711,7 +691,7 @@ void setup() {
   
   turnLED(OFF);
 
-  Serial.println("PhaseStatus\tStatus\tHumidity (%)\tTemperature (C)\tTempSet\tOverheating (.C)\t(F)\tHeatIndex (C)\t(F)");
+  Serial.println("PhaseStatus\tStatus\tHumidity (%)\tTemperature (C)\t\tTempSet\tOverheating (.C)\t(F)\tHeatIndex (C)\t(F)");
   timeOfLastMeasurement = -100000;
 
   delay(10000);
@@ -730,12 +710,20 @@ short decide(){
   if( lastPhaseStatus == String(PHASE_STATUS_CHEAP) ){
     compareValue += overheatingDifference; // TODO
   }
-  
-  if( (valC != NAN) && (((int)(valC*10)) < compareValue ) ){
-    action = HEATING;
-  }else{
-    action = NOTHING;
+
+  if(action == NOTHING){
+    compareValue = compareValue - TEMPERATURE_MARGIN;
   }
+  if(action == HEATING){
+    compareValue = compareValue + TEMPERATURE_MARGIN;
+  }
+  
+  if( (valC != NAN) && (((int)( (valC+0.05)*10)) < compareValue ) ){
+      action = HEATING;
+    }else{
+      action = NOTHING;
+    }
+  
   return action;
 }
 
@@ -785,7 +773,9 @@ void sensorLoop(long now){
     float oh = (float)overheatingDifference/10;
     turnLED(OFF);
 
+
     valC = temperature + TEMPERATURE_CORRECTION;
+    //valC = getTemperatureAvgValue(temperature + TEMPERATURE_CORRECTION);
     valH = humidity;
     valF = dht.toFahrenheit(temperature);
     valT = dht.computeHeatIndex(temperature, humidity, false);
@@ -796,8 +786,13 @@ void sensorLoop(long now){
     Serial.print("\t");
     Serial.print(humidity, 1);
     Serial.print("% \t\t");
-    Serial.print(valC, 1);
-    Serial.print(" C\t\t");
+    
+    Serial.print(valC, 2);
+    Serial.print(" C\t|  ");
+    valC = getTemperatureAvgValue(valC);
+    Serial.print(valC, 2);
+    Serial.print(" C\t");
+    
     Serial.print(ts, 1);
     Serial.print(" C\t");
     Serial.print("\t" + String(oh) + " C\t");

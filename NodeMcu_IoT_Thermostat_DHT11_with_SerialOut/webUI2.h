@@ -35,7 +35,7 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "</head>";
   pg += "<body>";
   pg += "<h1>" + String(SOFTWARE_NAME) + "</h1>";
-  pg += "<h2>" + String(MODULE_NAME) + "</h2>";
+  //pg += "<h2>" + String(MODULE_NAME) + "</h2>";
   pg += "<h3>" + String(VERSION) + "</h3>";
   pg += "<div class='container'>";
   

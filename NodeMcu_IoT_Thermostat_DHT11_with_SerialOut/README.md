@@ -1,4 +1,4 @@
-# IoT Thermostat v2.8
+# IoT Thermostat v2.8.1
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
@@ -8,6 +8,9 @@
 ### Version notes:
 - 2.8:
    - Using average of last measured temperature values
+   - 2.8.1
+     - Add "margin" (0.1°C) for need-heating? -decision
+     - Remove module-name ("UI") from webpage.
 - 2.7:
    - Add fuction to check factory control state over actuator device <br>
      and publish this information to KaaIoT

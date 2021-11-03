@@ -16,6 +16,8 @@
 
 #define TEMPERATURE_CORRECTION   (-0.5f)
 
+#define TEMPERATURE_MARGIN                 1    // 1 means 0.1°C
+
 
 // =============================
 // Pinout configuration
