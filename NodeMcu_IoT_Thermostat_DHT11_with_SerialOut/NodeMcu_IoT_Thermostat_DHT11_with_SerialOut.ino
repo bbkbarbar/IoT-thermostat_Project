@@ -18,8 +18,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v2.8.2"
-#define BUILDNUM                      42
+#define VERSION                  "v2.8.3"
+#define BUILDNUM                      44
 /*
  * Add device_name tag for RSSI
  */
@@ -347,7 +347,7 @@ void HandleRoot(){
   //message += "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>";
   String message = "";
   short price = 0;
-  if(lastPhaseStatus == String(PHASE_STATUS_EXPENSIVE)){
+  if(lastPhaseStatus == String(PHASE_STATUS_CHEAP)){
     price = 0;
   }else{
     price = 1;
@@ -451,14 +451,16 @@ void sendLogs(String lastPhaseStatus, String temperature , String ts , String oh
 void sendDataToKaaIoT(short retryCount, String ps, float temperature , float humidity, float tempSet , float overheating , String heating, short fc){
 
     String phaseStatusToSend = "";
-    if(ps == "1"){
-      phaseStatusToSend = "1";
+    if(ps == String(PHASE_STATUS_CHEAP)){
+      phaseStatusToSend = String(KAA_VALUE_PHASE_STATUS_CHEAP);
+    }else if(ps == String(PHASE_STATUS_EXPENSIVE)){
+      phaseStatusToSend = String(KAA_VALUE_PHASE_STATUS_EXPENSIVE);
     }else{
-      phaseStatusToSend = "10"; 
+      phaseStatusToSend = String(KAA_VALUE_PHASE_STATUS_UNKNOWN);
     }
 
     String heatingToSend = "";
-    if(heating == String(HEATING)){
+    if(heating == "1"){
       heatingToSend = "12";
     }else{
       heatingToSend = "0"; 

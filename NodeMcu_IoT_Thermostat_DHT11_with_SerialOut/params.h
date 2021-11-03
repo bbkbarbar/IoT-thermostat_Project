@@ -67,15 +67,19 @@
 #define ON                                 1
 #define OFF                                0
 
-#define PHASE_STATUS_EXPENSIVE           "0"
-#define PHASE_STATUS_CHEAP               "1"
-#define PHASE_STATUS_UNKNOWN             "?"
+#define PHASE_STATUS_EXPENSIVE            "0"
+#define PHASE_STATUS_CHEAP                "1"
+#define PHASE_STATUS_UNKNOWN              "?"
 
-#define NOTHING                            0
-#define HEATING                            1
+#define KAA_VALUE_PHASE_STATUS_CHEAP       "1"
+#define KAA_VALUE_PHASE_STATUS_UNKNOWN     "7"
+#define KAA_VALUE_PHASE_STATUS_EXPENSIVE  "10"
 
-#define DISPLAY_NOT_HEATING              "_"
-#define DISPLAY_HEATING                  "F"
+#define NOTHING                             0
+#define HEATING                             1
+
+#define DISPLAY_NOT_HEATING               "_"
+#define DISPLAY_HEATING                   "F"
 
 #define FC_STATUS_NOTHING             "0"
 #define FC_STATUS_HEATING             "1"

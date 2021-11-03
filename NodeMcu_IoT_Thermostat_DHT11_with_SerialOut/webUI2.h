@@ -97,9 +97,9 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "<div class='side-by-side text'>Price</div>";
   pg += "<div class='side-by-side reading'>";
   if(price == 0){
-  	pg += "$$$";
-  }else{
   	pg += "$";
+  }else{
+  	pg += "$$$";
   }
   pg += "</div>";
   pg += "</div>";
