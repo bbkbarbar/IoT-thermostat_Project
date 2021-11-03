@@ -1,4 +1,4 @@
-# IoT Thermostat v2.8.3
+# IoT Thermostat v2.8.4
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
@@ -7,6 +7,8 @@
 
 ### Version notes:
 - 2.8:
+   - 2.8.5
+     -
    - 2.8.4
      - Fix issue when price is unknown and UI shows low price
    - 2.8.3

@@ -18,8 +18,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v2.8.3"
-#define BUILDNUM                      44
+#define VERSION                  "v2.8.4"
+#define BUILDNUM                      45
 /*
  * Add device_name tag for RSSI
  */
@@ -596,7 +596,7 @@ int initWiFi(){
     // for reconnecting feature
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
-    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " [" + String(IOT_DEVICE_ID) + "] " + String(VERSION) + " b" + String(BUILDNUM));
+    WiFi.hostname(String(SOFTWARE_NAME) + " " + String(MODULE_NAME) + " " + String(VERSION) + " b" + String(BUILDNUM));
   }else{
     Serial.println("");
     Serial.print("ERROR: Unable to connect to ");
@@ -707,27 +707,28 @@ void setup() {
 
 
 short decide(){
-
-  int compareValue = tempSet;
-  if( lastPhaseStatus == String(PHASE_STATUS_CHEAP) ){
-    compareValue += overheatingDifference; // TODO
-  }
-
-  if(action == NOTHING){
-    compareValue = compareValue - TEMPERATURE_MARGIN;
-  }
-  if(action == HEATING){
-    compareValue = compareValue + TEMPERATURE_MARGIN;
-  }
-  
-  if( (valC != NAN) && (((int)( (valC+0.05)*10)) < compareValue ) ){
-      action = HEATING;
-    }else{
-      action = NOTHING;
+    int compareValue = tempSet;
+    if( lastPhaseStatus == String(PHASE_STATUS_CHEAP) ){
+      compareValue += overheatingDifference; // TODO
     }
   
-  return action;
+    if(action == NOTHING){
+      compareValue = compareValue - TEMPERATURE_MARGIN;
+    }
+    if(action == HEATING){
+      compareValue = compareValue + TEMPERATURE_MARGIN;
+    }
+    
+    if( (valC != NAN) && (((int)( (valC+0.05)*10)) < compareValue ) ){
+        action = HEATING;
+      }else{
+        action = NOTHING;
+      }
+    
+    return action;
 }
+
+
 
 int updateCounter = 0;
 
