@@ -1,4 +1,4 @@
-# IoT Thermostat v2.8.1
+# IoT Thermostat v2.8.2
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
@@ -8,9 +8,11 @@
 ### Version notes:
 - 2.8:
    - Using average of last measured temperature values
+   - 2.8.2
+     - Add RSSI on webUI
    - 2.8.1
      - Add "margin" (0.1°C) for need-heating? -decision
-     - Remove module-name ("UI") from webpage.
+     - Remove module-name ("UI") from webpage.   
 - 2.7:
    - Add fuction to check factory control state over actuator device <br>
      and publish this information to KaaIoT
@@ -29,7 +31,11 @@
 
 
 ### TODO list:
-   - Use "isnan()" -function
+   - Add previous state for decision making <br>
+     (turn on heanting only if 2 consecutive measuremens justifies that)
+     
+   - Use "isnan()" -function (on webUI too)<br>
+     Do not show humidity value if temperature is "NAN" (e.g.: after restart)
    - Store elapsed time since last KaaIoT update sent <br>
      for using during average calculations
    - ~~Use average of last measured temperature values~~ ✓

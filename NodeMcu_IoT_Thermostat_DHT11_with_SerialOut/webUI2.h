@@ -1,5 +1,5 @@
 // sendHTML(float temperature, float setTemperature, float humidity, short price, short heating);
-String sendHTML(float temperature, float setTemperature, float humidity, short price, short heating){
+String sendHTML(float temperature, float setTemperature, float humidity, short price, short heating, int rssi){
 
   String heatingColor = "";
   if(heating){
@@ -27,6 +27,7 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += ".humidity .reading{color: #3B97D3;}";
   pg += ".phasestatus .reading{color: #955BA5;}";
   pg += ".altitude .reading{color: " + heatingColor + ";}";
+  pg += ".tech .reading{color: #8a8a8a;}\n";
   pg += ".superscript{font-size: 17px;font-weight: 600;position: absolute;top: 10px;}";
   pg += ".data{padding: 10px;}";
   pg += ".container{display: table;margin: 0 auto;}";
@@ -122,6 +123,27 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   }
   pg += "</div>";
   pg += "</div>";
+
+  // RSSI
+  pg += "<div class='data tech'>\n";
+  pg += "<div class='side-by-side icon'>\n";
+  pg += "<svg enable-background='new 0 0 40.542 40.541'height=40.541px id=Layer_1 version=1.1 viewBox='0 0 40.542 40.541'width=40.542px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M34.313,20.271c0-0.552,0.447-1,1-1h5.178c-0.236-4.841-2.163-9.228-5.214-12.593l-3.425,3.424\n";
+  pg += "c-0.195,0.195-0.451,0.293-0.707,0.293s-0.512-0.098-0.707-0.293c-0.391-0.391-0.391-1.023,0-1.414l3.425-3.424\n";
+  pg += "c-3.375-3.059-7.776-4.987-12.634-5.215c0.015,0.067,0.041,0.13,0.041,0.202v4.687c0,0.552-0.447,1-1,1s-1-0.448-1-1V0.25\n";
+  pg += "c0-0.071,0.026-0.134,0.041-0.202C14.39,0.279,9.936,2.256,6.544,5.385l3.576,3.577c0.391,0.391,0.391,1.024,0,1.414\n";
+  pg += "c-0.195,0.195-0.451,0.293-0.707,0.293s-0.512-0.098-0.707-0.293L5.142,6.812c-2.98,3.348-4.858,7.682-5.092,12.459h4.804\n";
+  pg += "c0.552,0,1,0.448,1,1s-0.448,1-1,1H0.05c0.525,10.728,9.362,19.271,20.22,19.271c10.857,0,19.696-8.543,20.22-19.271h-5.178\n";
+  pg += "C34.76,21.271,34.313,20.823,34.313,20.271z M23.084,22.037c-0.559,1.561-2.274,2.372-3.833,1.814\n";
+  pg += "c-1.561-0.557-2.373-2.272-1.815-3.833c0.372-1.041,1.263-1.737,2.277-1.928L25.2,7.202L22.497,19.05\n";
+  pg += "C23.196,19.843,23.464,20.973,23.084,22.037z'fill=#8a8a8a /></g></svg>\n";
+  pg += "</div>\n";
+  pg += "<div class='side-by-side text'>RSSI</div>\n";
+  pg += "<div class='side-by-side reading'>\n";
+  pg += String(rssi);
+  pg += "</div>\n";
+  pg += "</div>\n";
+  
+  
   pg += "</div>";
   pg += "</body></html>";
   

@@ -18,8 +18,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                   "v2.8.1"
-#define BUILDNUM                      41
+#define VERSION                  "v2.8.2"
+#define BUILDNUM                      42
 /*
  * Add device_name tag for RSSI
  */
@@ -352,7 +352,7 @@ void HandleRoot(){
   }else{
     price = 1;
   }
-  message = sendHTML(valC, ((float)(tempSet)/10), valH, price, action);
+  message = sendHTML(valC, ((float)(tempSet)/10), valH, price, action, WiFi.RSSI());
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
