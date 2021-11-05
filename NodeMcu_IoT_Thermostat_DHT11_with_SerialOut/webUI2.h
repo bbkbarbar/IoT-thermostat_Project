@@ -39,7 +39,24 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   //pg += "<h2>" + String(MODULE_NAME) + "</h2>";
   pg += "<h3>" + String(VERSION) + "</h3>";
   pg += "<div class='container'>";
+
   
+  //TEMPERATURE
+  pg += "<div class='data temperature'>";
+  pg += "<div class='side-by-side icon'>";
+  pg += "<svg enable-background='new 0 0 19.438 54.003'height=54.003px id=Layer_1 version=1.1 viewBox='0 0 19.438 54.003'width=19.438px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M11.976,8.82v-2h4.084V6.063C16.06,2.715,13.345,0,9.996,0H9.313C5.965,0,3.252,2.715,3.252,6.063v30.982";
+  pg += "C1.261,38.825,0,41.403,0,44.286c0,5.367,4.351,9.718,9.719,9.718c5.368,0,9.719-4.351,9.719-9.718";
+  pg += "c0-2.943-1.312-5.574-3.378-7.355V18.436h-3.914v-2h3.914v-2.808h-4.084v-2h4.084V8.82H11.976z M15.302,44.833";
+  pg += "c0,3.083-2.5,5.583-5.583,5.583s-5.583-2.5-5.583-5.583c0-2.279,1.368-4.236,3.326-5.104V24.257C7.462,23.01,8.472,22,9.719,22";
+  pg += "s2.257,1.01,2.257,2.257V39.73C13.934,40.597,15.302,42.554,15.302,44.833z'fill=#26B999 /></g></svg>";
+  pg += "</div>";
+  pg += "<div class='side-by-side text'>Temperature</div>";
+  pg += "<div class='side-by-side reading'>";
+  pg += String(temperature);
+  pg += "<span class='superscript'>&deg;C</span></div>";
+  pg += "</div>";
+
+  // TEMP SET
   pg += "<div class='data temperatureSet'>";
   pg += "<div class='side-by-side icon'>";
   pg += "<svg enable-background='new 0 0 19.438 54.003'height=54.003px id=Layer_1 version=1.1 viewBox='0 0 19.438 54.003'width=19.438px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M11.976,8.82v-2h4.084V6.063C16.06,2.715,13.345,0,9.996,0H9.313C5.965,0,3.252,2.715,3.252,6.063v30.982";
@@ -54,20 +71,8 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "<span class='superscript'>&deg;C</span></div>";
   pg += "</div>";
   
-  pg += "<div class='data temperature'>";
-  pg += "<div class='side-by-side icon'>";
-  pg += "<svg enable-background='new 0 0 19.438 54.003'height=54.003px id=Layer_1 version=1.1 viewBox='0 0 19.438 54.003'width=19.438px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M11.976,8.82v-2h4.084V6.063C16.06,2.715,13.345,0,9.996,0H9.313C5.965,0,3.252,2.715,3.252,6.063v30.982";
-  pg += "C1.261,38.825,0,41.403,0,44.286c0,5.367,4.351,9.718,9.719,9.718c5.368,0,9.719-4.351,9.719-9.718";
-  pg += "c0-2.943-1.312-5.574-3.378-7.355V18.436h-3.914v-2h3.914v-2.808h-4.084v-2h4.084V8.82H11.976z M15.302,44.833";
-  pg += "c0,3.083-2.5,5.583-5.583,5.583s-5.583-2.5-5.583-5.583c0-2.279,1.368-4.236,3.326-5.104V24.257C7.462,23.01,8.472,22,9.719,22";
-  pg += "s2.257,1.01,2.257,2.257V39.73C13.934,40.597,15.302,42.554,15.302,44.833z'fill=#26B999 /></g></svg>";
-  pg += "</div>";
-  pg += "<div class='side-by-side text'>Temperature</div>";
-  pg += "<div class='side-by-side reading'>";
-  pg += String(temperature);
-  pg += "<span class='superscript'>&deg;C</span></div>";
-  pg += "</div>";
-  
+
+  //HUMIDITY
   pg += "<div class='data humidity'>";
   pg += "<div class='side-by-side icon'>";
   pg += "<svg enable-background='new 0 0 29.235 40.64'height=40.64px id=Layer_1 version=1.1 viewBox='0 0 29.235 40.64'width=29.235px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><path d='M14.618,0C14.618,0,0,17.95,0,26.022C0,34.096,6.544,40.64,14.618,40.64s14.617-6.544,14.617-14.617";
@@ -75,12 +80,13 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "c0.787,0,1.425,0.639,1.425,1.426c0,4.031,3.28,7.312,7.311,7.312c0.787,0,1.425,0.638,1.425,1.425";
   pg += "C15.093,36.497,14.455,37.135,13.667,37.135z'fill=#3C97D3 /></svg>";
   pg += "</div>";
-  
   pg += "<div class='side-by-side text'>Humidity</div>";
   pg += "<div class='side-by-side reading'>";
   pg += String((int)humidity);
   pg += "<span class='superscript'>%</span></div>";
   pg += "</div>";
+
+  // PRICE / PHASE-STATUS
   pg += "<div class='data phasestatus'>";
   pg += "<div class='side-by-side icon'>";
   pg += "<svg enable-background='new 0 0 40.542 40.541'height=40.541px id=Layer_1 version=1.1 viewBox='0 0 40.542 40.541'width=40.542px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M34.313,20.271c0-0.552,0.447-1,1-1h5.178c-0.236-4.841-2.163-9.228-5.214-12.593l-3.425,3.424";
@@ -103,6 +109,8 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   }
   pg += "</div>";
   pg += "</div>";
+
+  // HEATING ACTION
   pg += "<div class='data altitude'>";
   pg += "<div class='side-by-side icon'>";
   pg += "<svg enable-background='new 0 0 58.422 40.639'height=40.639px id=Layer_1 version=1.1 viewBox='0 0 58.422 40.639'width=58.422px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M58.203,37.754l0.007-0.004L42.09,9.935l-0.001,0.001c-0.356-0.543-0.969-0.902-1.667-0.902";
@@ -113,7 +121,6 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "C0.117,37.215,0,37.62,0,38.059c0,1.412,1.147,2.565,2.565,2.565v0.015h16.989c-0.091-0.256-0.149-0.526-0.149-0.813";
   pg += "C19.405,39.407,19.518,39.019,19.704,38.674z'fill=#955BA5 /></g></svg>";
   pg += "</div>";
-  
   pg += "<div class='side-by-side text'>Heating</div>";
   pg += "<div class='side-by-side reading'>";
   if(heating == 0){

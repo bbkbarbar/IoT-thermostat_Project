@@ -18,7 +18,7 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v2.8.4"
+#define VERSION                  "v2.8.5"
 #define BUILDNUM                      45
 /*
  * Add device_name tag for RSSI
