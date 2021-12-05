@@ -1,6 +1,9 @@
 
 #define USE_SECRET  1
 
+//#define USE_2_WAYS_COMMUNICATION
+/* It means thermostat tries to get factory control state from receiver (it receiver can provide that) */
+
 /*
  * Used board setting:
  * NodeMCU 1.0 (ESP-12E Module)
@@ -18,8 +21,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v2.8.5"
-#define BUILDNUM                      45
+#define VERSION                  "v2.8.6"
+#define BUILDNUM                      46
 /*
  * Add device_name tag for RSSI
  */
@@ -77,6 +80,14 @@ WiFiClient client;
 // SoftSerial
 //==================================
 SoftwareSerial serialOut(SOFT_SERIAL_RX, SOFT_SERIAL_TX);      // (Rx, Tx)
+
+//==================================
+// Button handling 
+//==================================
+//Buttons hooked on D4 and D3 pins
+#define BTN_PIN1                  13 // means D7 on NodeMCU board
+#define BTN_PIN2                  15 // means D8 on NodeMCU board
+
 
 //==================================
 // EEPROM
@@ -394,36 +405,40 @@ String getCurrentPhaseState(int retryCount){
 
 
 String getFactoryControlState(int retryCount){
-     WiFiClient myWC;
-    // old
-    //http.begin("192.168.1.170:81/data");  //Specify request destination
-    // new
-    String statusServerPath = String(ACTUATOR_URL) + "/fc";
-    http.begin(myWC, statusServerPath.c_str());  //Specify request destination
+    #ifdef USE_2_WAYS_COMMUNICATION
+      WiFiClient myWC;
+      // old
+      //http.begin("192.168.1.170:81/data");  //Specify request destination
+      // new
+      String statusServerPath = String(ACTUATOR_URL) + "/fc";
+      http.begin(myWC, statusServerPath.c_str());  //Specify request destination
 
 
-    int httpCode = http.GET();                                  //Send the request
-    //Serial.print("PhaseStatus - resultCode: " + String(httpCode) + " ps: ");
-    
-    String payload = "";
-    if (httpCode > 0) { //Check the returning code
-      payload = http.getString();   //Get the request response payload
-      //Serial.print(payload);
-      //Serial.println(payload);             //Print the response payload
-    }else{
-      payload = String(FC_STATUS_UNKNOWN);
-      Serial.println("httpCode: " + String(httpCode));
-    }
-    http.end();   //Close connection
+      int httpCode = http.GET();                                  //Send the request
+      //Serial.print("PhaseStatus - resultCode: " + String(httpCode) + " ps: ");
+      
+      String payload = "";
+      if (httpCode > 0) { //Check the returning code
+        payload = http.getString();   //Get the request response payload
+        //Serial.print(payload);
+        //Serial.println(payload);             //Print the response payload
+      }else{
+        payload = String(FC_STATUS_UNKNOWN);
+        Serial.println("httpCode: " + String(httpCode));
+      }
+      http.end();   //Close connection
 
-    Serial.println("FactoryState: " + payload);
+      Serial.println("FactoryState: " + payload);
 
-    if( (retryCount > 0) && (payload == String(FC_STATUS_UNKNOWN)) ){
-      // probably need to retry
-      return getFactoryControlState(--retryCount);
-    }else{
-      return payload;
-    }
+      if( (retryCount > 0) && (payload == String(FC_STATUS_UNKNOWN)) ){
+        // probably need to retry
+        return getFactoryControlState(--retryCount);
+      }else{
+        return payload;
+      }
+    #else
+      return FC_STATUS_UNKNOWN;
+    #endif
 }
 
 
@@ -560,6 +575,36 @@ void showPureValues(){
 }
 
 
+void onBtnReleased(byte btnId){
+    if(btnId == BTN_MINUS_ID){
+      tempSet -= 1;
+    }else
+    if(btnId == BTN_PLUS_ID){
+      tempSet += 1;
+    }
+
+    if(tempSet >= 255){
+      tempSet = 255;
+    }
+    if(tempSet < 10){
+      tempSet = 10;
+    }
+    
+    // save into eeprom
+    saveToEEPROM(eepromAddr, tempSet);
+
+    Serial.println("TempSet changed by buttons (" + String(btnId) + "): " + String(tempSet) );
+    //float ts = (float)tempSet/10;
+        
+    // "refresh.."
+    //To force quick reaction of set comand
+    timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+    updateDisplay();
+}
+
+#include "buttonHandling.h"
+
+
 // ==========================================================================================================================
 //                                                        WiFi handling
 // ==========================================================================================================================
@@ -690,6 +735,8 @@ void setup() {
 
   Serial.println("short: " + String(sizeof(short)));
   Serial.println("int: " + String(sizeof(int)));
+
+  setupButtons();
   
   turnLED(OFF);
 
@@ -759,6 +806,14 @@ String getDisplayContent(String phaseStatusStr, int tempInt, int humidityInt, in
     return line;
 }
 
+//change
+void updateDisplay(){
+    int tempInt = valC*10;
+    int humidityInt = valH;
+    String line = getDisplayContent(lastPhaseStatus, tempInt, humidityInt, tempSet, action); 
+    serialOut.println(line);
+}
+
 
 void sensorLoop(long now){
   if( (now - timeOfLastMeasurement) > DELAY_BETWEEN_ITERATIONS_IN_MS ){ //Take a measurement at a fixed time (durationTemp = 5000ms, 5s)
@@ -820,18 +875,17 @@ void sensorLoop(long now){
     decide();
 
     timeOfLastMeasurement = now;
-    int tempInt = valC*10;
-    int humidityInt = valH;
-    String line = getDisplayContent(lastPhaseStatus, tempInt, humidityInt, tempSet, action); 
-    serialOut.println(line);
 
+    //change
+    updateDisplay();
 
-    delay(1500);
+    // change
+    //delay(1500);
+    delay(100);
+    
     if(updateCounter == 1){
       #ifndef SKIP_KAAIOT_SEND
-      
         sendDataToKaaIoT(KAAIOT_RETRY_COUNT, lastPhaseStatus, valC, humidity, ts, oh, String(action), fcVal);
-        
       #endif
     }
     updateCounter++;
@@ -849,7 +903,11 @@ void sensorLoop(long now){
  
 void loop() {
   long now = millis();
+  readButtonStates();
   server.handleClient();
+  readButtonStates();
   wifiConnectionCheck(now);
+  readButtonStates();
   sensorLoop(now);
+  readButtonStates();
 }
