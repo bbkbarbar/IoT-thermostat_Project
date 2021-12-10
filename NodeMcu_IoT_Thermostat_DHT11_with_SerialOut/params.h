@@ -14,7 +14,7 @@
 // this is only for temperature correction based on seen difference 
 // between factory "Computherm" thermostat's dislpay and my DHT11 measurements
 
-#define TEMPERATURE_CORRECTION   (-0.5f)
+#define TEMPERATURE_CORRECTION       (-1.4f)
 
 #define TEMPERATURE_MARGIN                 1    // 1 means 0.1°C
 
@@ -28,6 +28,9 @@
 #define SOFT_SERIAL_RX                     5 //  5 means D1 in NodeMCU board
 #define SOFT_SERIAL_TX                     4 //  4 means D2 in NodeMCU board
 
+
+#define BTN_MINUS_ID                       1
+#define BTN_PLUS_ID                        2
 
 // =============================
 // Wireles configuration

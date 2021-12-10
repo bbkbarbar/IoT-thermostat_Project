@@ -8,7 +8,7 @@
 ### Version notes:
 - 2.8:
    - 2.8.5
-     - Change order in webIO (Temperature 1st, Set-temperature 2nd)
+     - Change order in webUI (Temperature 1st, Set-temperature 2nd)
    - 2.8.4
      - Fix issue when price is unknown and UI shows low price
    - 2.8.3
