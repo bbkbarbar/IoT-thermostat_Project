@@ -7,6 +7,8 @@
 
 ### Version notes:
 - 2.8:
+   - 2.8.6
+     - Minor changes, add temperature correction according to the last calibration
    - 2.8.5
      - Change order in webUI (Temperature 1st, Set-temperature 2nd)
    - 2.8.4
