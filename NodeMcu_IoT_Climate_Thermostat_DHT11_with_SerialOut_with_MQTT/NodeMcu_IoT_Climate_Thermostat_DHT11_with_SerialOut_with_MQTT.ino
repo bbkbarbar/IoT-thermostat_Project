@@ -21,7 +21,7 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v3.0.0"
+#define VERSION                  "v3.0.1"
 #define BUILDNUM                      54
 /*
  * Add device_name tag for RSSI
@@ -159,6 +159,20 @@ int errorCount = 0;
 
 unsigned long elapsedTime = 0;
 
+
+boolean isValueInRange(float val, float max, float min, String text){
+
+  if( (val != NAN) && (val <= max) && (val >= min) ){
+    return true;
+  }else{
+    Serial.println("\n\n\nINVALID VALUE (" + text + "): " + String(val) + "\n\n");
+    return false;
+  }
+}
+
+boolean isValueSeemsReal(float val, String text){
+  return isValueInRange(val, 100.0f, -100.0f, text);
+}
 
 float getTemperatureAvgValue(float lastVal){
 
@@ -344,6 +358,8 @@ void setTargetTemperature(int valueInt){
     publishCurrentTemp(valC);
 
     publishData(); // publish data as a standalone mqtt device..
+
+    decide(); //MAYBE not needed
   
 }
 
@@ -615,6 +631,11 @@ void connectToMqtt() {
 }
 
 void publishCurrentTemp(float tempVal){
+
+  if(isValueSeemsReal(tempVal, "temperature to publish") == false){
+    return;
+  }
+
   Serial.println("\n\n\nStart publishing temperatureValue: " + String(tempVal) + "\n\n");
   String str = String(tempVal);
   int len = str.length();
@@ -647,6 +668,9 @@ void publishMode(){
 }
 
 void publishTempSet(float setVal){
+  if(isValueSeemsReal(setVal, "tempSET to publish") == false){
+    return;
+  }
   String str = String(setVal);
   int len = str.length();
   char* payload ="    ";
@@ -910,6 +934,7 @@ short decide(){
       compareValue += overheatingDifference; // TODO
     }
 
+    /*
     int newMode = 9;
     if(currentMode == MODE_HEAT || currentMode == MODE_AUTO){
       if( lastPhaseStatus == String(PHASE_STATUS_CHEAP) ){
@@ -921,22 +946,42 @@ short decide(){
         currentMode = newMode;
         publishMode();
       }
-    }
-    
-
+    }/**/
   
-    if(action == NOTHING){
-      compareValue = compareValue - TEMPERATURE_MARGIN;
-    }
     if(action == HEATING){
       compareValue = compareValue + TEMPERATURE_MARGIN;
+    }else{
+      compareValue = compareValue - TEMPERATURE_MARGIN;
     }
+
+    int v = ((int)( (valC+0.05)*10));
     
     if( (valC != NAN) && (((int)( (valC+0.05)*10)) < compareValue ) ){
-        action = HEATING;
+      action = HEATING;
+    }else{
+      action = NOTHING;
+    }
+    //Serial.println("\n\nDECIDE:\nvalC: " + String(v) + "\ncompareValue: " + String(compareValue) + "\nACTION: "+ action + "\n\n");
+
+    if(currentMode == MODE_OFF){
+      action = NOTHING;
+    }
+
+    int newMode = 9;
+
+    if(currentMode == MODE_HEAT || currentMode == MODE_AUTO){
+      //Serial.println("\nAUTO || HEAT\n");
+      if( action == HEATING ){
+        newMode = MODE_HEAT;
       }else{
-        action = NOTHING;
+        newMode = MODE_AUTO;
       }
+
+      if(newMode != currentMode){
+        currentMode = newMode;
+        publishMode();
+      }
+    }
     
     return action;
 }
@@ -991,12 +1036,14 @@ void publishData(){
 
       // create Json content for publishing multiple data as 1 msg
       String jsonPayload = "{";
-
-      jsonPayload += String("\"temperature\": ") + String(tempShow).c_str() + String(", ");
+      if(isValueSeemsReal(tempShow, "json publish - temperature"))
+        jsonPayload += String("\"temperature\": ") + String(tempShow).c_str() + String(", ");
       jsonPayload += String("\"humidity\": ") + String(humInt).c_str() + String(", ");
       jsonPayload += String("\"temperature_set\": ") + String(ts).c_str() + String(", ");
-      jsonPayload += String("\"overheating\": ") + String(oh).c_str() + String(", ");
-      jsonPayload += String("\"overheated_temp_set\": ") + String(ohv).c_str() + String(", ");
+      if(isValueInRange(oh, 10.0f, -10.0f, "json publish - overheating"))
+        jsonPayload += String("\"overheating\": ") + String(oh).c_str() + String(", ");
+      if(isValueSeemsReal(ohv, "json publish - overheated temp set"))
+        jsonPayload += String("\"overheated_temp_set\": ") + String(ohv).c_str() + String(", ");
       jsonPayload += String("\"heating\": ") + String(action).c_str() + String(", ");
       jsonPayload += String("\"rssi\": ") + String(WiFi.RSSI()).c_str();
       //jsonPayload += "\"name\": \"valueStr\", ";
@@ -1098,9 +1145,11 @@ void sensorLoop(long now){
       // Publish MQTT msg - temperature
       int rounder = (int)( (valC) * 10.0f);   // +0.05f handled in temperature_correction
       float tempShow = (rounder / 10.0f);
-      uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_TEMP, 1, true, String(tempShow).c_str());                            
-      Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_TEMP, packetIdPub1);
-      Serial.printf("Message: %.1f \n", valC);
+      if(isValueSeemsReal(tempShow, "sandalone temperature")){
+        uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_TEMP, 1, true, String(tempShow).c_str());                            
+        Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_TEMP, packetIdPub1);
+        Serial.printf("Message: %.1f \n", valC);
+      }
 
       // Publish MQTT msg - humidity
       uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_HUM, 1, true, String(valH).c_str());                            
@@ -1113,9 +1162,11 @@ void sensorLoop(long now){
       //Serial.printf("Message: %i \n", action);
 
       // Publish MQTT msg - tempset
-      uint16_t packetIdPub4 = mqttClient.publish(MQTT_PUB_TEMP_SET, 1, true, String(ts).c_str());                            
-      Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_TEMP_SET, packetIdPub4);
-      Serial.printf("Message: %.1f \n", ts);
+      if(isValueSeemsReal(ts, "sandalone tempSet")){
+        uint16_t packetIdPub4 = mqttClient.publish(MQTT_PUB_TEMP_SET, 1, true, String(ts).c_str());                            
+        Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_TEMP_SET, packetIdPub4);
+        Serial.printf("Message: %.1f \n", ts);
+      }
 
       // Publish MQTT msg - overheating
       //uint16_t packetIdPub5 = mqttClient.publish(MQTT_PUB_OVERHEAT, 1, true, String(oh).c_str());                            
