@@ -21,8 +21,8 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v3.0.1"
-#define BUILDNUM                      54
+#define VERSION                  "v3.0.3"
+#define BUILDNUM                      60
 /*
  * Add device_name tag for RSSI
  */
@@ -139,7 +139,7 @@ short nextDataIdx = 0;
 float tempDataArr[AVG_ARR_SIZE];
 
 
-short tempSet = 150; // means 15,0 °C
+short tempSet = 190; // means 19,0 °C
 short overheatingDifference = 0;
 
 short action = NOTHING; // can be NOTHING or HEATING
@@ -636,7 +636,7 @@ void publishCurrentTemp(float tempVal){
     return;
   }
 
-  Serial.println("\n\n\nStart publishing temperatureValue: " + String(tempVal) + "\n\n");
+  //Serial.println("\n\n\nStart publishing temperatureValue: " + String(tempVal) + "\n\n");
   String str = String(tempVal);
   int len = str.length();
   char* payload ="    ";
@@ -703,9 +703,12 @@ void onMqttConnect(bool sessionPresent) {
   Serial.println("Publishing at QoS 1");
 
   // Publish current temp
-  publishCurrentTemp(20.0f);
+  //publishCurrentTemp(20.0f);
 
   // Publish temp set
+  if(tempSet < 190){ // means 19.0C
+    tempSet = 190;
+  }
   float TsVal = (tempSet / 10.0f);
   publishTempSet(TsVal);
 
@@ -1033,18 +1036,26 @@ void publishData(){
       int humInt = valH;
       int rounder = (int)( (valC) * 10.0f);   // +0.05f handled in temperature_correction
       float tempShow = (rounder / 10.0f);
+      float currentlyUsedSetValue = (( lastPhaseStatus == String(PHASE_STATUS_CHEAP) )?(ohv):(ts) );
+      String phaseStatusToPublish = (( lastPhaseStatus == String(PHASE_STATUS_CHEAP) )?(PHASE_STATUS_TO_BUBLISH_CHEAP):(PHASE_STATUS_TO_BUBLISH_EXPENSIVE) );
 
       // create Json content for publishing multiple data as 1 msg
       String jsonPayload = "{";
       if(isValueSeemsReal(tempShow, "json publish - temperature"))
         jsonPayload += String("\"temperature\": ") + String(tempShow).c_str() + String(", ");
-      jsonPayload += String("\"humidity\": ") + String(humInt).c_str() + String(", ");
+      if(isValueInRange( (humInt*1.0f), 100.0f, MIN_CREDIBLE_HUMIDITY, "json publish - humidity"))
+        jsonPayload += String("\"humidity\": ") + String(humInt).c_str() + String(", ");
       jsonPayload += String("\"temperature_set\": ") + String(ts).c_str() + String(", ");
       if(isValueInRange(oh, 10.0f, -10.0f, "json publish - overheating"))
         jsonPayload += String("\"overheating\": ") + String(oh).c_str() + String(", ");
       if(isValueSeemsReal(ohv, "json publish - overheated temp set"))
         jsonPayload += String("\"overheated_temp_set\": ") + String(ohv).c_str() + String(", ");
+      if(isValueSeemsReal(currentlyUsedSetValue, "json publish - currently used temp set"))
+        jsonPayload += String("\"currently_used_set_value\": ") + String(currentlyUsedSetValue).c_str() + String(", ");
       jsonPayload += String("\"heating\": ") + String(action).c_str() + String(", ");
+
+      jsonPayload += String("\"considered_phase_state\": ") + phaseStatusToPublish.c_str() + String(", ");
+      
       jsonPayload += String("\"rssi\": ") + String(WiFi.RSSI()).c_str();
       //jsonPayload += "\"name\": \"valueStr\", ";
       
@@ -1152,9 +1163,11 @@ void sensorLoop(long now){
       }
 
       // Publish MQTT msg - humidity
-      uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_HUM, 1, true, String(valH).c_str());                            
-      Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_HUM, packetIdPub2);
-      Serial.printf("Message: %.2f \n", valH);
+      if(isValueInRange( valH, 100.0f, MIN_CREDIBLE_HUMIDITY, "json publish - humidity")){
+        uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_HUM, 1, true, String(valH).c_str());                            
+        Serial.printf("Publishing on topic %s at QoS 1, packetId: %i ", MQTT_PUB_HUM, packetIdPub2);
+        Serial.printf("Message: %.2f \n", valH);
+      }
 
       // Publish MQTT msg - heating
       //uint16_t packetIdPub3 = mqttClient.publish(MQTT_PUB_HEATING, 1, true, String(action).c_str());                            

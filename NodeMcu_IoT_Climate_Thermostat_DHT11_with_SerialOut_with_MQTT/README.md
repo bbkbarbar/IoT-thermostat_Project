@@ -1,4 +1,4 @@
-# IoT Thermostat v2.8.5
+# IoT Thermostat v3.0.3
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
@@ -7,6 +7,12 @@
 
 ### Version notes:
 - 3.0:
+
+   - 3.0.3
+     - Publish phase state value to easily show in "history" view on dashboards
+   - 3.0.2
+     - Fix: device will not publish "incredible" data (e.g. humidity < used sensor's min reading value) 
+     - Minor changes
    - 3.0.1
      - Modes are used to show the current state:
        - Automatic: Ready, but currently no need for heating

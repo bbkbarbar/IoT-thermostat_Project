@@ -14,7 +14,8 @@
 // this is only for temperature correction based on seen difference 
 // between factory "Computherm" thermostat's dislpay and my DHT11 measurements
 
-#define TEMPERATURE_CORRECTION   (-0.65f)
+#define TEMPERATURE_CORRECTION      (-0.65f)
+#define MIN_CREDIBLE_HUMIDITY        (20.0f)    // since this is DHT11's min. measurable value
 
 #define TEMPERATURE_MARGIN                 1    // 1 means 0.1°C
 
@@ -60,34 +61,38 @@
 #define ARG_OVERHEAT2 "diff"
 
 // problem handling
-#define ERROR_COUNT_BEFORE_RESTART         3
+#define ERROR_COUNT_BEFORE_RESTART            3
 
 
 // =============================
 // logic constat definitions
 // =============================
 
-#define ON                                 1
-#define OFF                                0
+#define ON                                    1
+#define OFF                                   0
 
-#define PHASE_STATUS_EXPENSIVE            "0"
-#define PHASE_STATUS_CHEAP                "1"
-#define PHASE_STATUS_UNKNOWN              "?"
+#define PHASE_STATUS_EXPENSIVE               "0"
+#define PHASE_STATUS_CHEAP                   "1"
+#define PHASE_STATUS_UNKNOWN                 "?"
 
-#define KAA_VALUE_PHASE_STATUS_CHEAP       "1"
-#define KAA_VALUE_PHASE_STATUS_UNKNOWN     "7"
-#define KAA_VALUE_PHASE_STATUS_EXPENSIVE  "10"
+#define PHASE_STATUS_TO_BUBLISH_CHEAP     "21.0"
+#define PHASE_STATUS_TO_BUBLISH_EXPENSIVE "25.0"
 
-#define NOTHING                             0
-#define HEATING                             1
+#define KAA_VALUE_PHASE_STATUS_CHEAP         "1"
+#define KAA_VALUE_PHASE_STATUS_UNKNOWN       "7"
+#define KAA_VALUE_PHASE_STATUS_EXPENSIVE    "10"
 
-#define MODE_OFF                            0
-#define MODE_HEAT                           1
-#define MODE_AUTO                           2
+#define NOTHING                               0
+#define HEATING                               1
+#define TURNED_OFF                            2
 
-#define DISPLAY_NOT_HEATING                "_"
-#define DISPLAY_HEATING                    "F"
+#define MODE_OFF                              0
+#define MODE_HEAT                             1
+#define MODE_AUTO                             2
 
-#define FC_STATUS_NOTHING                  "0"
-#define FC_STATUS_HEATING                  "1"
-#define FC_STATUS_UNKNOWN                  "?"
+#define DISPLAY_NOT_HEATING                  "_"
+#define DISPLAY_HEATING                      "F"
+
+#define FC_STATUS_NOTHING                    "0"
+#define FC_STATUS_HEATING                    "1"
+#define FC_STATUS_UNKNOWN                    "?"
