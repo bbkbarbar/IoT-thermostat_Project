@@ -22,7 +22,7 @@
 #define SKIP_TS_COMMUNICATION
 
 #define VERSION                  "v3.0.4"
-#define BUILDNUM                      62
+#define BUILDNUM                      63
 /*
  * Add device_name tag for RSSI
  */
