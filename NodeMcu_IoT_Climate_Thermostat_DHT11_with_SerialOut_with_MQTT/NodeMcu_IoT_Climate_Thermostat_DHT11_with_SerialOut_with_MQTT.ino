@@ -829,7 +829,7 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     for(int i=0; i<total; i++){
       payloadStr += payload[i];
     }
-    Serial.println("\n\nWanted overheat value: |" + payloadStr + "|\n\n");
+    Serial.println("Wanted overheat value: |" + payloadStr + "|\n\n");
     overheatingDifference = payloadStr.toInt();
     storeOverHeatValue();
     //To force quick reaction of set comand
