@@ -21,8 +21,8 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v3.0.3"
-#define BUILDNUM                      60
+#define VERSION                  "v3.0.4"
+#define BUILDNUM                      62
 /*
  * Add device_name tag for RSSI
  */
@@ -50,6 +50,8 @@
 #define MQTT_PUB_OVERHEATVAL "boorfeszek/iot_thermostat_2/overheatval"
 #define MQTT_PUB_RSSI "boorfeszek/iot_thermostat_2/rssi"
 #define MQTT_PUB_DATA "boorfeszek/iot_thermostat_2/json"
+
+#define MQTT_SUB_OHT "boorfeszek/iot_thermostat_2/setoverheat"
 
 #include <SoftwareSerial.h>
 #include <DHTesp.h>
@@ -321,13 +323,16 @@ void actionTempSet(){
   server.send(200, "text/html", m );
 }
 
+void storeOverHeatValue(){
+  // save into eeprom
+  saveToEEPROM(eepromAddr2, overheatingDifference);
+}
 
 void actionOverheatSet(){
   String value = server.arg("value"); //this lets you access a query param (http://x.x.x.x/set?value=12)
   overheatingDifference = value.toInt();
 
-  // save into eeprom
-  saveToEEPROM(eepromAddr2, overheatingDifference);
+  storeOverHeatValue();
 
   float oh = (float)overheatingDifference/10;
   Serial.println("Try to set overheating: " + String(overheatingDifference) );
@@ -697,6 +702,11 @@ void onMqttConnect(bool sessionPresent) {
   Serial.print("Subscribing at QoS 0, packetId: ");
   Serial.println(packetIdSub2);
 
+  // SetOverheat my HA via mqtt
+  uint16_t packetIdSub3 = mqttClient.subscribe(MQTT_SUB_OHT, 0); // TODO: QoS os OK?
+  Serial.print("Subscribing at QoS 0, packetId: ");
+  Serial.println(packetIdSub3);
+
   // Publish my config
   int configQoS = 1;
   mqttClient.publish(TOPIC_MQTT_CLIMATE_CONFIG, configQoS, true, configStr); //TODO payload
@@ -809,6 +819,21 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
       currentMode = MODE_OFF;
       publishMode();
     }
+  }
+  
+  else
+
+  if(topicStr == String(MQTT_SUB_OHT)){
+    String payloadStr = "";
+    for(int i=0; i<total; i++){
+      payloadStr += payload[i];
+    }
+    Serial.println("\n\nWanted overheat value: |" + payloadStr + "|\n\n");
+    overheatingDifference = payloadStr.toInt();
+    storeOverHeatValue();
+    //To force quick reaction of set comand
+    timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+    publishData(); // publish data as a standalone mqtt device..
   }
 
 }

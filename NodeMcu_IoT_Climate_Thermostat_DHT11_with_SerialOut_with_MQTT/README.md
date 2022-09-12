@@ -7,7 +7,9 @@
 
 ### Version notes:
 - 3.0:
-
+   - 3.0.4
+     - Overheat value can be set by mqtt messages 
+       By this overheat value can be scheduled by HA.
    - 3.0.3
      - Publish phase state value to easily show in "history" view on dashboards
    - 3.0.2
