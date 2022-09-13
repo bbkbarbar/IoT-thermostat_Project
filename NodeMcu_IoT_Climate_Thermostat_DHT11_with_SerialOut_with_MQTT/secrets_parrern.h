@@ -25,6 +25,16 @@
 #endif
 
 
+
+
+// =============================
+// MQTT connection details
+// =============================
+
+#define SECRET_MQTT_USER             "ha_mqtt_user"  
+#define SECRET_MQTT_PASS             "PW"  
+
+
 // =============================
 // KaaIoT connection details
 // =============================
