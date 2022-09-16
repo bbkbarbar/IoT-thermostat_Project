@@ -14,7 +14,7 @@
 // this is only for temperature correction based on seen difference 
 // between factory "Computherm" thermostat's dislpay and my DHT11 measurements
 
-#define TEMPERATURE_CORRECTION      (-0.75f)
+#define TEMPERATURE_CORRECTION      (-1.10f)
 #define MIN_CREDIBLE_HUMIDITY        (20.0f)    // since this is DHT11's min. measurable value
 
 #define TEMPERATURE_MARGIN                 1    // 1 means 0.1°C
