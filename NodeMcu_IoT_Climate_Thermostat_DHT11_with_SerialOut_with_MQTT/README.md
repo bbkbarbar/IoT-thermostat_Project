@@ -7,6 +7,9 @@
 
 ### Version notes:
 - 3.0:
+   - 3.0.6
+     - Temperature sensor calibration
+     - Humidity sensor calbiration added (-3% currently)
    - 3.0.4
      - Overheat value can be set by mqtt messages 
        By this overheat value can be scheduled by HA.

@@ -21,8 +21,8 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v3.0.4"
-#define BUILDNUM                      66
+#define VERSION                  "v3.0.6"
+#define BUILDNUM                      68
 
 /*
  * Add device_name tag for RSSI
@@ -704,7 +704,7 @@ void onMqttConnect(bool sessionPresent) {
   Serial.println(packetIdSub2);
 
   // SetOverheat my HA via mqtt
-  uint16_t packetIdSub3 = mqttClient.subscribe(MQTT_SUB_OHT, 0); // TODO: QoS os OK?
+  uint16_t packetIdSub3 = mqttClient.subscribe(MQTT_SUB_OHT, 2); // TODO: QoS os OK?
   Serial.print("Subscribing at QoS 0, packetId: ");
   Serial.println(packetIdSub3);
 
@@ -1114,7 +1114,7 @@ void sensorLoop(long now){
 
     valC = temperature + TEMPERATURE_CORRECTION;
     //valC = getTemperatureAvgValue(temperature + TEMPERATURE_CORRECTION);
-    valH = humidity;
+    valH = humidity + HUMIDITY_CORRECTION;
     valF = dht.toFahrenheit(temperature);
     valT = dht.computeHeatIndex(temperature, humidity, false);
    
