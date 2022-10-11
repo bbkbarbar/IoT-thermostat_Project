@@ -13,8 +13,8 @@
 //#define USE_TEST_CHANNEL
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                 "v1.4.1"
-#define BUILDNUM                      21
+#define VERSION                 "v1.4.2"
+#define BUILDNUM                      23
 
 #define SERIAL_BOUND_RATE         115200
 #define SOFT_SERIAL_BOUND_RATE      9600
@@ -134,54 +134,6 @@ void HandleNotFound(){
   }
   server.send(404, "text/html", message);
 }
-
-/*
-byte sendDataToKaaIoT(short retryCount, short heating){
-
-    String heatingToSend = "";
-    if(heating == 1){
-      heatingToSend = "13";
-    }else{
-      heatingToSend = "0"; 
-    }
-
-    String postData = 
-                "{\n";
-
-    // NOT IMPORTANT
-    postData += "\t\"RSSI-" + String(MODULE_NAME) + "\": " + String(WiFi.RSSI()) + ",\n";
-    
-    postData += "\t\"Actuator-heating\": "     + heatingToSend + "\n";
-    postData += "}";
-
-    Serial.println("PostData:\n" + postData);
-    
-    // new
-    
-    String url = String(KAA_POST_PATH);
-    //String url = String(MOCK_SERVICE_PATH);
-
-    //http.begin(client, url.c_str());  //Specify request destination
-    WiFiClient wfc;
-    http.begin(wfc, url);  //Specify request destination
-
-    //http.addHeader("Content-Type", "text/plain");
-    //http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    http.addHeader("Content-Type", "application/json");
-    int httpCode = http.POST(postData);                                  //Send the request
-    Serial.println("POST request sent: " + String(httpCode) + " " + url);
-
-    //Close connection
-    http.end();   //Close connection
-
-    // TODO check http code if needed
-    if( (httpCode != 200) && (retryCount > 0) ){
-      sendDataToKaaIoT( (retryCount-1), heating);
-    }
-
-    return ((httpCode == 200)?1:0);
-}
-/**/
 
 
 void HandleNotRstEndpoint(){
@@ -369,9 +321,10 @@ void setup() {
   //server.on ("/save", handleSave);
   server.on("/rst", HandleNotRstEndpoint);
   server.onNotFound( HandleNotFound );
+  //server.begin();
+  delay(1500);
+  Serial.println("HTTP server starts at ip " + WiFi.localIP().toString() + String("@ port: ") + String(SERVER_PORT) );
   server.begin();
-  Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + String("@ port: ") + String(SERVER_PORT) );
-
 
   //TODO
   delay(500);
@@ -389,7 +342,7 @@ void wifiConnectionCheck(long now){
     
     switch (WiFi.status()){
       case WL_NO_SSID_AVAIL:
-        Serial.println("Configured SSID cannot be reached");
+        Serial.println("Configured SSID cannot be reached \nMy IP: " + WiFi.localIP().toString());
         break;
       case WL_CONNECTED:
         //Serial.println("Connection successfully established");
@@ -440,7 +393,7 @@ void doOurTask(long now){
       turnHeating(OFF);
       action = NOTHING;
     }
-    Serial.println("Action to do: " + String(action));
+    Serial.println("Action to do: " + String(action) + " RSSI: " + WiFi.RSSI() + " dBm \tMy IP: " + WiFi.localIP().toString());
 
 
     /*
