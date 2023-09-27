@@ -21,8 +21,14 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v3.0.6"
-#define BUILDNUM                      68
+#define VERSION                  "v3.0.7"
+#define BUILDNUM                      70
+
+/*
+ * v3.0.7:
+ *   Remove aux heating feature from climate device (since it become depricated in HASSOS 2023.09
+ */
+
 
 /*
  * Add device_name tag for RSSI
@@ -598,7 +604,7 @@ void connectToWifi(){
   }
 }
 
-int initWiFi(){
+void initWiFi(){
 
   connectToWifi();
   if(WiFi.status() == WL_CONNECTED){

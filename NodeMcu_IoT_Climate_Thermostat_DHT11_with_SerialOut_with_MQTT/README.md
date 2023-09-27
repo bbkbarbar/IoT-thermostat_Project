@@ -7,6 +7,8 @@
 
 ### Version notes:
 - 3.0:
+   - 3.0.7
+     - Remove AUX heating function from climate device, since it become depricated in HASS_OS 2023.09. 
    - 3.0.6
      - Temperature sensor calibration
      - Humidity sensor calbiration added (-3% currently)
