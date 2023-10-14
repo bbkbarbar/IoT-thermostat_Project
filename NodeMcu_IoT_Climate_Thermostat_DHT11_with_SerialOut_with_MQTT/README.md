@@ -1,4 +1,4 @@
-# IoT Thermostat v4.0.1
+# IoT Thermostat v4.0.2
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
