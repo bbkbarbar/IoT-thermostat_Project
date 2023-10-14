@@ -9,7 +9,8 @@ It also has capability of different custom-interfaces (e.g.: show values on smar
 ### Modules:
  - #### [Thermostat](https://github.com/bbkbarbar/IoT-thermostat_Project/tree/main/NodeMcu_IoT_Thermostat_DHT11_with_SerialOut)
    - Measures inside temperature and humidity
-   - Can use external temperature resource(s) e.g.: Any device (HomeAssistant or anything else) can provide temperature value for this thermostat over MQTT
+   - Can use external temperature resource(s): 
+     Any device (HomeAssistant or anything else) can provide temperature value for this thermostat over MQTT
      Due to lack of this "external" data it reverts to using own DTH sensor.
    - get price information from "PhaseChecker"-device
      - .. over MQTT
