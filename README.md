@@ -1,121 +1,46 @@
 # IoT Thermostat v4.0.2
 
+Custom made thermostat for building's heating control with capability of timing heat-phases when energy price is discounted.
+It also has capability of different custom-interfaces (e.g.: show values on smart-mirror, etc.)
+
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
+
+
+### Modules:
+ - #### [Thermostat](https://github.com/bbkbarbar/IoT-thermostat_Project/tree/main/NodeMcu_IoT_Thermostat_DHT11_with_SerialOut)
+   - Measures inside temperature and humidity
+   - Can use external temperature resource(s) e.g.: Any device (HomeAssistant or anything else) can provide temperature value for this thermostat over MQTT
+     Due to lack of this "external" data it reverts to using own DTH sensor.
+   - get price information from "PhaseChecker"-device
+     - .. over MQTT
+     - .. by using GET requests to "PhaseChecker"-device
+   - Provide command to the "actuator" module (receiver) to control building's heater device
+   - Shows informations on OLED display:
+     - Current temperature
+     - Set temperature
+     - Humidity value (rh)
+     - Current "price"
+     - Current decision (heating or not)
+
+ - #### [Actuator / Receiver](https://github.com/bbkbarbar/IoT-thermostat_Project/tree/main/NodeMcu_IoT_Actuator)
+    - Can get action from thermostat module ("Custom mode")
+    - Can get action from factory thermostat receiver ("factory mode")
+    - Observe control state of factory thermostat receiver
+
+ - #### PhaseChecker device:
+    - Provide current status of "low-priced" energy source (currently available or not)
 
 #### Required libraries:
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
-### Version notes:
-- 4.0:
-   - 4.0.2
-     - Thermostat can "receive" cheap-state from external resource over MQTT
-   - 4.0.1
-     - Thermostat can "receive" temperature values from external sensor(s) via MQTT
-- 3.0:
-   - 3.0.7
-     - Remove AUX heating function from climate device, since it become depricated in HASS_OS 2023.09. 
-   - 3.0.6
-     - Temperature sensor calibration
-     - Humidity sensor calbiration added (-3% currently)
-   - 3.0.4
-     - Overheat value can be set by mqtt messages 
-       By this overheat value can be scheduled by HA.
-   - 3.0.3
-     - Publish phase state value to easily show in "history" view on dashboards
-   - 3.0.2
-     - Fix: device will not publish "incredible" data (e.g. humidity < used sensor's min reading value) 
-     - Minor changes
-   - 3.0.1
-     - Modes are used to show the current state:
-       - Automatic: Ready, but currently no need for heating
-       - Heat: Currently heating
-       - OFF: Heating turned off.
-   - 3.0.0
-     - Act as a Home Assistant compatible "Climate" device
+#### Hardware requirement:
+- Thermostat
+  - NodeMCU board (or WeMos D1 mini also applicable)
+  - DHT11 temperature and humidity sensor (DHT22 also applicable)
+  - Arduino Nano (other arduino version can also be used)
+  - OLED display (0.96" with SPI interface)
 
-- 2.9:
-   - 2.9.1
-     - Add MQTT data publish feature as JSON
-   - 2.9.0
-     - Disable KaaIoT data sendig
-
-
-- 2.8:
-   - 2.8.6
-     - Minor changes, add temperature correction according to the last calibration
-   - 2.8.5
-     - Change order in webUI (Temperature 1st, Set-temperature 2nd)
-   - 2.8.4
-     - Fix issue when price is unknown and UI shows low price
-   - 2.8.3
-     - Add "unknown" state for price in KaaIoT updates
-   - 2.8.2
-     - Add RSSI on webUI
-   - 2.8.1
-     - Add "margin" (0.1°C) for need-heating? -decision
-     - Remove module-name ("UI") from webpage.   
-   - 2.8.0
-     - Using average of last measured temperature values
-- 2.7:
-   - Add fuction to check factory control state over actuator device <br>
-     and publish this information to KaaIoT
-   - Change heeting-feedback from 1/0 to F/_
-   - Create common /set endpoint for parameters
-- 2.6:
-   - Add hostname to WiFi client ✓
-   - Send data to KaaIoT ✓ (b32)
-   - WebUI 2 (b34) ✓
-- 2.5:
-   - Query phaseStatus infos from other device over WiFi ✓
-   - Handle value settings from REST api calls on specified endpoints ✓
-   - Show current data as webpage ✓
-   - Serve a specified endpoint for actuator what contains only the needed action ✓
-
-
-
-### TODO list:
-   - Get static IP for PhaseChecker device and use that in PHASE_CHECKER_IP on this device
-   - Add previous state for decision making <br>
-     (turn on heanting only if 2 consecutive measuremens justifies that)
-
-   - Use "isnan()" -function (on webUI too)<br>
-     Do not show humidity value if temperature is "NAN" (e.g.: after restart)
-   - Store elapsed time since last KaaIoT update sent <br>
-     for using during average calculations~~ <b>X</b>
-   - ~~Use average of last measured temperature values~~ ✓
-   - ~~Use "automatic go-back" -function in /set endpoints~~ ✓
-   - ~~Create recursive function for getCurrentPhaseState() with retryCount~~ ✓
-   - ~~Create new webUI page (based on sample2.html)~~✓
-   - ~~Implement color changes in heating's line in webUI 2~~ ✓
-   - ~~Data logging on local mock server should works fine~~ ✓
-   - tempSet can not be restored properly from EEPROM if it's last value > 255
-      (overflow occures)
-    Tried to store in 2 places and concatenate.. now working yet.
-
-### Endpoints:
-- /result => for checking wanted status by actuator
-- /pure => return a JSON object what contains all available data:
-   - IoT device id (int)
-   - BuildNum (int)
-   - location (name like "living room")
-   - elapsedTime (long since device started)
-   - tempC (float as string)
-   - tempF (float as string)
-   - humidity (float as string)
-   - heatIndex (float as string)
-   - targetTemp (float as string)
-   - overheatingDiff (float as string)
-   - phaseCheckerIP (as string)
-   - phaseStatus (1|0)
-   - heating (1|0)
-- /data => show basic sensor values
-- /data2 => show extended sensor values (+ phaseStatus)
-- /rst => reboot device insantly
-- /set => Set parameters:<br>
-  - "/set?temp=235" or "/set?temperature=235" means target temperature = 23,5°C
-  - "/set?diff=4" or "/set?overheat=4" means overheating difference = 0,4°C<br>
-- Depricated endpoints:
-  - /temp => set needed temperature<br>
-   "/set?value=235" (means 23,5°C)
-  - /overheat => set overheating temperature difference
-   "/overheat?value=5" (means 0,5°C)
+- Actuator
+  - WeMos D1 mini board (NodeMCU also applicable)
+  - Relay module (1ch, low level triggered version)
+  - NPN transistor and resistors for control relay-module
