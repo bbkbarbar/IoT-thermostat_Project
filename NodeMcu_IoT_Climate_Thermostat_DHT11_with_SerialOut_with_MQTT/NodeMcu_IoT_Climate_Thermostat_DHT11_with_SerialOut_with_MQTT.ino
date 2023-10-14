@@ -9,7 +9,7 @@
  * NodeMCU 1.0 (ESP-12E Module)
  */ 
 
-//#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO
+//#define SHOW_OUTPUTS_FOR_DISLPAY_IN_SERIAL_TOO _
 
 
 // 1 "TP-Link_BB"    
@@ -21,8 +21,13 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v3.0.7"
-#define BUILDNUM                      70
+#define VERSION                  "v4.0.2"
+#define BUILDNUM                      73
+
+#define OWN_SENSOR                     0
+#define EXTERNAL_SENSOR                1
+
+
 
 /*
  * v3.0.7:
@@ -59,6 +64,10 @@
 #define MQTT_PUB_DATA "boorfeszek/iot_thermostat_2/json"
 
 #define MQTT_SUB_OHT "boorfeszek/iot_thermostat_2/setoverheat"
+
+// MQTT Subscribe for additional features
+#define TOPIC_TEMPERATURE_FROM_HA_SENSOR  "homeassistant/indoor_temp"
+#define TOPIC_CHEAP_STATE_SENSOR          "boorfeszek/energy-cheap/state"
 
 #include <SoftwareSerial.h>
 #include <DHTesp.h>
@@ -133,6 +142,8 @@ SoftwareSerial serialOut(SOFT_SERIAL_RX, SOFT_SERIAL_TX);      // (Rx, Tx)
 int eepromAddr =                   1;
 int eepromAddr2 =                  4;
 
+int usedSensor = OWN_SENSOR;
+
 
 //==================================
 // "Data" variables
@@ -141,6 +152,7 @@ float valC = NAN;
 float valF = NAN;
 float valH = NAN;
 float valT = NAN;
+float valCExt = NAN;
 
 #define AVG_ARR_SIZE 5
 short dataCount = 0;
@@ -158,6 +170,7 @@ int lastTSUpdateStatus = -1;
 
 long updateCount = 0;
 String lastPhaseStatus = "";
+String receivedPhaseState = "";
 
 //==================================
 // Other variables
@@ -367,7 +380,11 @@ void setTargetTemperature(int valueInt){
     publishTempSet(tsF);
     //Serial.println("Publish done: |" + String(pl) + "|");
 
-    publishCurrentTemp(valC);
+    if( (usedSensor == EXTERNAL_SENSOR) && (valCExt != NAN)){
+      publishCurrentTemp(valCExt);
+    }else{
+      publishCurrentTemp(valC);
+    }
 
     publishData(); // publish data as a standalone mqtt device..
 
@@ -431,7 +448,7 @@ void HandleRoot(){
   }else{
     price = 1;
   }
-  message = sendHTML(valC, ((float)(tempSet)/10), valH, price, action, WiFi.RSSI());
+  message = sendHTML(valC, ((float)(tempSet)/10), valH, price, action, WiFi.RSSI(), usedSensor, valCExt);
   /*
   message = generateHtmlHeader();
   message += generateHtmlBody();
@@ -441,33 +458,40 @@ void HandleRoot(){
 
 
 String getCurrentPhaseState(int retryCount){
-     WiFiClient myWC;
-    // old
-    //http.begin("192.168.1.170:81/data");  //Specify request destination
-    // new
-    String statusServerPath = "http://" + String(PHASE_CHECKER_IP) + ":81/data";
-    http.begin(myWC, statusServerPath.c_str());  //Specify request destination
 
-
-    int httpCode = http.GET();                                  //Send the request
-    //Serial.print("PhaseStatus - resultCode: " + String(httpCode) + " ps: ");
-    
-    String payload = "";
-    if (httpCode > 0) { //Check the returning code
-      payload = http.getString();   //Get the request response payload
-      //Serial.print(payload);
-      //Serial.println(payload);             //Print the response payload
-    }else{
-      payload = String(PHASE_STATUS_UNKNOWN);
-      Serial.println("httpCode: " + String(httpCode));
+    if((receivedPhaseState != "") && (receivedPhaseState != PHASE_STATUS_UNKNOWN)){
+      return receivedPhaseState;
     }
-    http.end();   //Close connection
+    else{
 
-    if( (retryCount > 0) && (payload == String(PHASE_STATUS_UNKNOWN)) ){
-      // probably need to retry
-      return getCurrentPhaseState(--retryCount);
-    }else{
-      return payload;
+      WiFiClient myWC;
+      // old
+      //http.begin("192.168.1.170:81/data");  //Specify request destination
+      // new
+      String statusServerPath = "http://" + String(PHASE_CHECKER_IP) + ":81/data";
+      http.begin(myWC, statusServerPath.c_str());  //Specify request destination
+
+
+      int httpCode = http.GET();                                  //Send the request
+      //Serial.print("PhaseStatus - resultCode: " + String(httpCode) + " ps: ");
+      
+      String payload = "";
+      if (httpCode > 0) { //Check the returning code
+        payload = http.getString();   //Get the request response payload
+        //Serial.print(payload);
+        //Serial.println(payload);             //Print the response payload
+      }else{
+        payload = String(PHASE_STATUS_UNKNOWN);
+        Serial.println("httpCode: " + String(httpCode));
+      }
+      http.end();   //Close connection
+
+      if( (retryCount > 0) && (payload == String(PHASE_STATUS_UNKNOWN)) ){
+        // probably need to retry
+        return getCurrentPhaseState(--retryCount);
+      }else{
+        return payload;
+      }
     }
 }
 
@@ -710,9 +734,19 @@ void onMqttConnect(bool sessionPresent) {
   Serial.println(packetIdSub2);
 
   // SetOverheat my HA via mqtt
-  uint16_t packetIdSub3 = mqttClient.subscribe(MQTT_SUB_OHT, 2); // TODO: QoS os OK?
+  uint16_t packetIdSub3 = mqttClient.subscribe(MQTT_SUB_OHT, 2); // TODO: QoS is OK?
   Serial.print("Subscribing at QoS 0, packetId: ");
   Serial.println(packetIdSub3);
+
+  // Indoor temperature from external sensor(s)
+  uint16_t packetIdSub4 = mqttClient.subscribe(TOPIC_TEMPERATURE_FROM_HA_SENSOR, 0);
+  Serial.print("Subscribing at QoS 0, packetId: ");
+  Serial.println(packetIdSub4);
+
+  // Cheap state from external sensor over MQTT
+  uint16_t packetIdSub5 = mqttClient.subscribe(TOPIC_CHEAP_STATE_SENSOR, 0);
+  Serial.print("Subscribing at QoS 0, packetId: ");
+  Serial.println(packetIdSub5);
 
   // Publish my config
   int configQoS = 1;
@@ -842,6 +876,43 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
     publishData(); // publish data as a standalone mqtt device..
   }
+
+  else
+
+  if(topicStr == String(TOPIC_TEMPERATURE_FROM_HA_SENSOR)){
+    String payloadStr = "";
+    for(int i=0; i<total; i++){
+      payloadStr += payload[i];
+    }
+    Serial.println("Received external sensor value: |" + payloadStr + "|\n\n");
+  
+    valCExt = payloadStr.toFloat();
+
+    //To force quick reaction of set comand
+    timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+    usedSensor = EXTERNAL_SENSOR;
+    publishData(); // publish data as a standalone mqtt device..
+  }
+
+  else
+
+  if(topicStr == String(TOPIC_CHEAP_STATE_SENSOR)){
+    String payloadStr = "";
+    for(int i=0; i<total; i++){
+      payloadStr += payload[i];
+    }
+    Serial.println("Received external cheap state: |" + payloadStr + "|\n\n");
+    
+    receivedPhaseState = payloadStr;
+    //if( (receivedPhaseState != String(PHASE_STATUS_EXPENSIVE)) && (receivedPhaseState != String(PHASE_STATUS_CHEAP))){
+    //  receivedPhaseState = String(PHASE_STATUS_UNKNOWN);
+    //}
+
+    //To force quick reaction of set comand
+    timeOfLastMeasurement = timeOfLastMeasurement - DELAY_BETWEEN_ITERATIONS_IN_MS;
+    publishData(); // publish data as a standalone mqtt device..
+  }
+
 
 }
 
@@ -989,13 +1060,25 @@ short decide(){
       compareValue = compareValue - TEMPERATURE_MARGIN;
     }
 
-    int v = ((int)( (valC+0.05)*10));
-    
-    if( (valC != NAN) && (((int)( (valC+0.05)*10)) < compareValue ) ){
+
+    // TEMPERATURE COMPARE
+
+    int v = 0;
+    if( (usedSensor == EXTERNAL_SENSOR) && (valCExt != NAN)){
+      v = ((int)( (valCExt+0.05)*10));
+    }
+    else{
+      // USE OWN SENSOR
+      v = ((int)( (valC+0.05)*10));
+    }
+
+    if( (valC != NAN) && (v < compareValue ) ){
       action = HEATING;
     }else{
       action = NOTHING;
     }
+    
+
     //Serial.println("\n\nDECIDE:\nvalC: " + String(v) + "\ncompareValue: " + String(compareValue) + "\nACTION: "+ action + "\n\n");
 
     if(currentMode == MODE_OFF){
@@ -1066,7 +1149,13 @@ void publishData(){
       float oh = (float)overheatingDifference/10;
       float ohv = ts+oh;
       int humInt = valH;
-      int rounder = (int)( (valC) * 10.0f);   // +0.05f handled in temperature_correction
+      int rounder = 0;
+      if( (usedSensor == EXTERNAL_SENSOR) && (valCExt != NAN) ){
+        rounder = (int)( (valCExt) * 10.0f);
+      }else{
+        rounder = (int)( (valC) * 10.0f);   // +0.05f handled in temperature_correction
+      }
+      
       float tempShow = (rounder / 10.0f);
       float currentlyUsedSetValue = (( lastPhaseStatus == String(PHASE_STATUS_CHEAP) )?(ohv):(ts) );
       String phaseStatusToPublish = (( lastPhaseStatus == String(PHASE_STATUS_CHEAP) )?(PHASE_STATUS_TO_BUBLISH_CHEAP):(PHASE_STATUS_TO_BUBLISH_EXPENSIVE) );
@@ -1119,6 +1208,13 @@ void sensorLoop(long now){
 
 
     valC = temperature + TEMPERATURE_CORRECTION;
+    //TODO: currently overwriting the measured value with received temperature value if received value is available
+    // instead of this, we should simple use the received value, but in MQTT publish, we should use the external value for displaying in HA side..
+
+    //if((usedSensor == EXTERNAL_SENSOR) && (valCExt != NAN) ){
+    //  valC = valCExt;
+    //}
+
     //valC = getTemperatureAvgValue(temperature + TEMPERATURE_CORRECTION);
     valH = humidity + HUMIDITY_CORRECTION;
     valF = dht.toFahrenheit(temperature);
@@ -1158,8 +1254,15 @@ void sensorLoop(long now){
       fcVal = 5;
     }
 
-    int rounder = (int)( (valC) * 10.0f);   // +0.05f handled in temperature_correction
-    float tempShow = (rounder / 10.0f);
+    float tempShow = 0.0f;
+
+    if((usedSensor == EXTERNAL_SENSOR) && (valCExt != NAN) ){
+      int rounder = (int)( (valCExt) * 10.0f);   // +0.05f handled in temperature_correction
+      tempShow = (rounder / 10.0f);
+    }else{
+      int rounder = (int)( (valC) * 10.0f);   // +0.05f handled in temperature_correction
+      tempShow = (rounder / 10.0f);
+    }
 
     publishCurrentTemp(tempShow);
     

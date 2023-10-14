@@ -1,4 +1,4 @@
-# IoT Thermostat v3.0.3
+# IoT Thermostat v4.0.1
 
 ![image](https://raw.githubusercontent.com/bbkbarbar/IoT-thermostat_Project/main/IoT_Thermostat_v2.png)
 
@@ -6,6 +6,11 @@
  - ESP8266 Community v2.7.3 (newer not applicable with currently used device(s))
 
 ### Version notes:
+- 4.0:
+   - 4.0.2
+     - Thermostat can "receive" cheap-state from external resource over MQTT
+   - 4.0.1
+     - Thermostat can "receive" temperature values from external sensor(s) via MQTT
 - 3.0:
    - 3.0.7
      - Remove AUX heating function from climate device, since it become depricated in HASS_OS 2023.09. 
@@ -69,13 +74,14 @@
 
 
 ### TODO list:
+   - Get static IP for PhaseChecker device and use that in PHASE_CHECKER_IP on this device
    - Add previous state for decision making <br>
      (turn on heanting only if 2 consecutive measuremens justifies that)
 
    - Use "isnan()" -function (on webUI too)<br>
      Do not show humidity value if temperature is "NAN" (e.g.: after restart)
    - Store elapsed time since last KaaIoT update sent <br>
-     for using during average calculations
+     for using during average calculations~~ <b>X</b>
    - ~~Use average of last measured temperature values~~ ✓
    - ~~Use "automatic go-back" -function in /set endpoints~~ ✓
    - ~~Create recursive function for getCurrentPhaseState() with retryCount~~ ✓

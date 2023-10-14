@@ -1,5 +1,5 @@
 // sendHTML(float temperature, float setTemperature, float humidity, short price, short heating);
-String sendHTML(float temperature, float setTemperature, float humidity, short price, short heating, int rssi){
+String sendHTML(float temperature, float setTemperature, float humidity, short price, short heating, int rssi, int sensorMode, float externalTemperature){
 
   String heatingColor = "";
   if(heating){
@@ -55,6 +55,23 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += String(temperature);
   pg += "<span class='superscript'>&deg;C</span></div>";
   pg += "</div>";
+
+  //TEMPERATURE EXTERNAL
+  if(sensorMode == EXTERNAL_SENSOR){
+    pg += "<div class='data temperature'>";
+    pg += "<div class='side-by-side icon'>";
+    pg += "<svg enable-background='new 0 0 19.438 54.003'height=54.003px id=Layer_1 version=1.1 viewBox='0 0 19.438 54.003'width=19.438px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M11.976,8.82v-2h4.084V6.063C16.06,2.715,13.345,0,9.996,0H9.313C5.965,0,3.252,2.715,3.252,6.063v30.982";
+    pg += "C1.261,38.825,0,41.403,0,44.286c0,5.367,4.351,9.718,9.719,9.718c5.368,0,9.719-4.351,9.719-9.718";
+    pg += "c0-2.943-1.312-5.574-3.378-7.355V18.436h-3.914v-2h3.914v-2.808h-4.084v-2h4.084V8.82H11.976z M15.302,44.833";
+    pg += "c0,3.083-2.5,5.583-5.583,5.583s-5.583-2.5-5.583-5.583c0-2.279,1.368-4.236,3.326-5.104V24.257C7.462,23.01,8.472,22,9.719,22";
+    pg += "s2.257,1.01,2.257,2.257V39.73C13.934,40.597,15.302,42.554,15.302,44.833z'fill=#26B999 /></g></svg>";
+    pg += "</div>";
+    pg += "<div class='side-by-side text'>Temp. Ext</div>";
+    pg += "<div class='side-by-side reading'>";
+    pg += String(externalTemperature);
+    pg += "<span class='superscript'>&deg;C</span></div>";
+    pg += "</div>";
+  }
 
   // TEMP SET
   pg += "<div class='data temperatureSet'>";
@@ -150,6 +167,26 @@ String sendHTML(float temperature, float setTemperature, float humidity, short p
   pg += "</div>\n";
   pg += "</div>\n";
   
+  // SENSOR MODE
+  pg += "<div class='data altitude'>";
+  pg += "<div class='side-by-side icon'>";
+  pg += "<svg enable-background='new 0 0 58.422 40.639'height=40.639px id=Layer_1 version=1.1 viewBox='0 0 58.422 40.639'width=58.422px x=0px xml:space=preserve xmlns=http://www.w3.org/2000/svg xmlns:xlink=http://www.w3.org/1999/xlink y=0px><g><path d='M58.203,37.754l0.007-0.004L42.09,9.935l-0.001,0.001c-0.356-0.543-0.969-0.902-1.667-0.902";
+  pg += "c-0.655,0-1.231,0.32-1.595,0.808l-0.011-0.007l-0.039,0.067c-0.021,0.03-0.035,0.063-0.054,0.094L22.78,37.692l0.008,0.004";
+  pg += "c-0.149,0.28-0.242,0.594-0.242,0.934c0,1.102,0.894,1.995,1.994,1.995v0.015h31.888c1.101,0,1.994-0.893,1.994-1.994";
+  pg += "C58.422,38.323,58.339,38.024,58.203,37.754z'fill=#955BA5 /><path d='M19.704,38.674l-0.013-0.004l13.544-23.522L25.13,1.156l-0.002,0.001C24.671,0.459,23.885,0,22.985,0";
+  pg += "c-0.84,0-1.582,0.41-2.051,1.038l-0.016-0.01L20.87,1.114c-0.025,0.039-0.046,0.082-0.068,0.124L0.299,36.851l0.013,0.004";
+  pg += "C0.117,37.215,0,37.62,0,38.059c0,1.412,1.147,2.565,2.565,2.565v0.015h16.989c-0.091-0.256-0.149-0.526-0.149-0.813";
+  pg += "C19.405,39.407,19.518,39.019,19.704,38.674z'fill=#955BA5 /></g></svg>";
+  pg += "</div>";
+  pg += "<div class='side-by-side text'>Sensor mode:</div>";
+  pg += "<div class='side-by-side reading'>";
+  if(sensorMode == OWN_SENSOR){
+    pg += "Own DHT11";
+  }else{
+    pg += "<b>External</b>";
+  }
+  pg += "</div>";
+  pg += "</div>";
   
   pg += "</div>";
   pg += "</body></html>";
