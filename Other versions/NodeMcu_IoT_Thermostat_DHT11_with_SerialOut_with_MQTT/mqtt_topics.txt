@@ -1,0 +1,7 @@
+"boorfeszek/iot_thermostat_2/temperature"
+"boorfeszek/iot_thermostat_2/humidity"
+"boorfeszek/iot_thermostat_2/heating"
+"boorfeszek/iot_thermostat_2/tempset"
+"boorfeszek/iot_thermostat_2/overheat"
+"boorfeszek/iot_thermostat_2/overheatval"
+"boorfeszek/iot_thermostat_2/rssi"
