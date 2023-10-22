@@ -7,6 +7,8 @@
 
 ### Version notes:
 - 4.0:
+   - 4.0.3
+     - Filter out any "0°C" current temperature publish (what seems to happens shortly after boot)
    - 4.0.2
      - Thermostat can "receive" cheap-state from external resource over MQTT
    - 4.0.1

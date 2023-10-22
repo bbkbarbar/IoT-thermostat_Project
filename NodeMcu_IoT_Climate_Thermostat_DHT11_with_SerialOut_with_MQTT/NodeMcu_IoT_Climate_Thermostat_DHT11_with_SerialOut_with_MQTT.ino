@@ -21,8 +21,8 @@
 #define SKIP_KAAIOT_SEND
 #define SKIP_TS_COMMUNICATION
 
-#define VERSION                  "v4.0.2"
-#define BUILDNUM                      73
+#define VERSION                  "v4.0.3"
+#define BUILDNUM                      74
 
 #define OWN_SENSOR                     0
 #define EXTERNAL_SENSOR                1
@@ -193,7 +193,7 @@ boolean isValueInRange(float val, float max, float min, String text){
 }
 
 boolean isValueSeemsReal(float val, String text){
-  return isValueInRange(val, 100.0f, -100.0f, text);
+  return isValueInRange(val, 100.0f, 2.0f, text);
 }
 
 float getTemperatureAvgValue(float lastVal){
